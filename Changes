@@ -1,12 +1,25 @@
 Revision history for Perl extension MARC::Record.
 
-1.38	March 16th, 2004
+1.39_01 Mon Jul 26 11:48:33 PDT 2004
+
+        [ENHANCEMENTS]
+        - Support for UTF8 in Perls >= 5.8.1. When using a utf8 friendly Perl
+          all file streams will be opened in utf8 mode, and the bytes pragma
+          will be used to create and use direcotry byte offsets. 
+        - Added MARC::File::Utils which contains utf8 safe functions.
+        - marcdump now sets STDOUT to utf8 if it is able to.
+        - t/utf8.t is no longer skipped.
+        - removed redundant record length check in MARC::File::USMARC::_next()
+          and adjusted tests in t/75.warnings.t
+        - All tests run under -T.
+
+1.38    March 16th, 2004
 
         [ENHANCEMENTS]
         - Performance tweak on MARC::Field->is_control_field() since it
-	  gets called a lot when cloning records.
-	- Performance tweak on MARC::Field->as_string(), since it gets
-	  called all the time.
+          gets called a lot when cloning records.
+        - Performance tweak on MARC::Field->as_string(), since it gets
+          called all the time.
 
 
 1.36    March 9th, 2004

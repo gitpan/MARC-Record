@@ -1,19 +1,17 @@
-# $Id: 50.batch.t,v 1.10 2003/04/23 03:10:50 petdance Exp $
+#!perl -Tw
 
 use strict;
 use integer;
 
 use Test::More tests=>268;
 
-BEGIN {
+BEGIN: {
     use_ok( 'MARC::Batch' );
 }
 
-
-
 # Test the USMARC stuff
 USMARC: {
-    my $batch = new MARC::Batch( 'MARC::File::USMARC', 't/camel.usmarc' );
+    my $batch = new MARC::Batch( 'USMARC', 't/camel.usmarc' );
     isa_ok( $batch, 'MARC::Batch', 'MARC batch' );
 
     my $n = 0;
