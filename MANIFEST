@@ -1,13 +1,10 @@
-.releaserc
 Changes
 MANIFEST
 Makefile.PL
 META.yml
 README
 bin/marcdump
-bin/marclint
-etc/ecbdlist.html
-etc/specs
+
 lib/MARC/Batch.pm
 lib/MARC/Doc/Tutorial.pod
 lib/MARC/Field.pm
@@ -15,8 +12,8 @@ lib/MARC/File/MicroLIF.pm
 lib/MARC/File.pm
 lib/MARC/File/USMARC.pm
 lib/MARC/File/Utils.pm
-lib/MARC/Lint.pm
 lib/MARC/Record.pm
+
 t/00.load.t
 t/10.camel.t
 t/11.astring.t
@@ -53,7 +50,6 @@ t/lineendings-0a.lif
 t/lineendings-0d0a.lif
 t/lineendings-0d.lif
 t/lineendings.t
-t/lint.t
 t/pod.t
 t/pod-coverage.t
 t/sample100.lif

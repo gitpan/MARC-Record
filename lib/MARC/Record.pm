@@ -16,14 +16,12 @@ use Carp qw(croak);
 
 =head1 VERSION
 
-Version 1.39_01
-
-    $Id: Record.pm,v 1.83 2004/07/26 18:58:22 petdance Exp $
+Version 1.39_02
 
 =cut
 
 use vars qw( $VERSION );
-$VERSION = '1.39_01';
+$VERSION = '1.39_02';
 
 use Exporter;
 use vars qw( @ISA @EXPORTS @EXPORT_OK );
@@ -39,10 +37,6 @@ use constant LEADER_LEN => 24;
 
 Module for handling MARC records as objects.  The file-handling stuff is
 in MARC::File::*.
-
-=head1 EXPORT
-
-None.
 
 =head1 ERROR HANDLING
 
@@ -61,7 +55,6 @@ the MARC::File::* modules to read from a file.
 
 sub new {
     my $class = shift;
-    $class = ref($class) || $class; # Handle cloning
     my $self = {
         _leader => ' ' x 24,
         _fields => [],
@@ -188,8 +181,9 @@ sub fields() {
 
 =head2 field( I<tagspec(s)> )
 
-Returns a list of tags that match the field specifier, or in scalar
-context, just the first matching tag.
+Returns a list of tags that match the field specifier, or an empty
+list if nothing matched.  In scalar context, returns the first
+matching tag, or undef if nothing matched.
 
 The field specifier can be a simple number (i.e. "245"), or use the "."
 notation of wildcarding (i.e. subject tags are "6..").
@@ -221,6 +215,7 @@ sub field {
         } # for $maybe
     } # for $tag
 
+    return unless wantarray;
     return @list;
 }
 
@@ -545,14 +540,17 @@ sub clone {
     my $self = shift;
     my @keeper_tags = @_;
 
-    my $clone = $self->new();
+    # create a new object of whatever type we happen to be
+    my $class = ref( $self );
+    my $clone = $class->new();
+
     $clone->{_leader} = $self->{_leader};
 
     my $filtered = @keeper_tags ? [$self->field( @keeper_tags )] : undef;
 
     for my $field ( $self->fields() ) {
         if ( !$filtered || (grep {$field eq $_} @$filtered ) ) {
-            $clone->add_fields( $field->clone );
+            $clone->append_fields( $field->clone );
         }
     }
 
@@ -761,7 +759,7 @@ Combine MARC.pm and MARC::* into one distribution.
 
 Imagine something like this:
 
-  my @sears_headings = $marc->tag_grep( /Sears/ );
+  my @sears_headings = $marc->tag_grep( qr/Sears/ );
 
 (from Mike O'Regan)
 
