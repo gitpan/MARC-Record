@@ -9,29 +9,22 @@ MARC::Lint - Perl extension for checking validity of MARC records
 
 =head1 SYNOPSIS
 
-  use MARC::Record;
-  use MARC::Lint;
+    use MARC::File::USMARC;
+    use MARC::Lint;
 
-  my $linter = new MARC::Lint;
-  my $filename = shift;
+    my $lint = new MARC::Lint;
+    my $filename = shift;
 
-  open( IN, "<", $filename ) or die "Couldn't open $filename: $!\n";
-  binmode( IN ); # for the Windows folks
-  while ( !eof(IN) ) {
-  	my $marc = MARC::Record::next_from_file( *IN );
-	die $MARC::Record::ERROR unless $marc;
-
-	$linter->check_record( $marc );
-
+    my $file = MARC::File::USMARC->in( $filename );
+    while ( my $marc = $file->next() ) {
+	$lint->check_record( $marc );
 
 	# Print the title tag
-	print $marc->subfield(245,"a"), "\n";
+	print $marc->title, "\n";
 
 	# Print the errors that were found
 	print join( "\n", $linter->warnings ), "\n";
-  } # while
-
-  close IN or die "Error closing $filename: $!\n";
+    } # while
 
 Given the following MARC record:
 
@@ -57,8 +50,6 @@ the following errors are generated:
 	245: Subfield _a is not repeatable.
 	250: Field is not repeatable.
 	260: Subfield _r is not valid.
-	260: Must have a subfield _c.
-	590: Indicator 1 must be blank
 	856: Indicator 2 must be blank, 0, 1, 2 or 8
 
 =head1 DESCRIPTION
@@ -159,8 +150,10 @@ sub check_record {
 	(ref($marc) eq "MARC::Record")
 		or return $self->warn( "Must pass a MARC::Record object to check_record" );
 
-	if ( (my @_1xx = $marc->field( "1XX" )) > 1 ) {
-		$self->warn( "1XX: Only one 1XX tag is allowed, but I found ", scalar @_1xx, " of them." );
+	my @_1xx = $marc->field( "1.." );
+	my $n1xx = scalar @_1xx;
+	if ( $n1xx > 1 ) {
+		$self->warn( "1XX: Only one 1XX tag is allowed, but I found $n1xx of them." );
 	}
 
 	if ( not $marc->field( 245 ) ) {
@@ -267,45 +260,40 @@ Andy Lester, E<lt>marc@petdance.comE<gt>
 
 # Used only to read the stuff from __DATA__
 sub _read_rules() {
-	my $self = shift;
+    my $self = shift;
+    
+    my $tell = tell(DATA);  # Stash the position so we can reset it for next time
+
+    local $/ = "";
+    while ( my $tagblock = <DATA> ) {
+	my @lines = split( /\n/, $tagblock );
+	s/\s+$// for @lines;
+
+	next unless @lines >= 4; # Some of our entries are tag-only
 	
-	my $tell = tell(DATA);  # Stash the position so we can reset it for next time
+	my $tagline = shift @lines;
+	my @keyvals = split( /\s+/, $tagline, 3 );
+	my $tagno = shift @keyvals;
+	my $repeatable = shift @keyvals;
+	
+	$self->_parse_tag_rules( $tagno, $repeatable, @lines );
+    } # while
 
-	local $/ = "";
-	while ( my $lines = <DATA> ) {
-		$lines =~ s/\s+$//;
-		my @keyvals = split( /\s+/, $lines );
-
-		my $tagno = shift @keyvals;
-		my $repeatable = shift @keyvals;
-		
-		my @tag_range = ($tagno);
-		if ( $tagno =~ /^(\d\d)X/ ) {
-			my $base = $1;
-			@tag_range = ( "${base}0" .. "${base}9" );
-		}
-
-		# Handle the ranges of tags.
-		for my $currtag ( @tag_range ) {
-			$self->_parse_tag_rules( $currtag, $repeatable, @keyvals );
-		} # for
-		# I guess I could just have multiple references to the same tag, but I'm not that worried about memory
-	} # while
-
-	# Set the pointer back to where it was, in case we do this again
-	seek( DATA, $tell, 0 );
+    # Set the pointer back to where it was, in case we do this again
+    seek( DATA, $tell, 0 );
 }
 
 sub _parse_tag_rules {
 	my $self = shift;
 	my $tagno = shift;
 	my $repeatable = shift;
-	my @keyvals = @_;
+	my @lines = @_;
 
 	my $rules = ($self->{_rules}->{$tagno} ||= {});
 	$rules->{$repeatable} = $repeatable;
 
-	while ( @keyvals ) {
+	for ( @lines ) {
+		my @keyvals = split( /\s+/, $_, 3 );
 		my $key = shift @keyvals;
 		my $val = shift @keyvals;
 		
