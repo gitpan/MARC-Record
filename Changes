@@ -1,6 +1,12 @@
 Revision history for Perl extension MARC::Record.
 
-0.01  Mon Apr 30 09:34:24 2001
-	- original version; created by h2xs 1.21 with options
-		-A -X -n MARC::Record
+0.05  May 16, 2001
+	- Created t/camel.t as the basis for a test suite. 
+	- Removed the MARC::Field::subfields() method
+	- Documentation cleanup.
 
+0.04  May 15, 2001
+	- Sped up the MARC::Record and MARC::Field constructors about 30%.
+
+0.01  Apr 20, 2001
+	- First version.

@@ -15,11 +15,11 @@ use MARC::Field;
 
 =head1 VERSION
 
-Version 0.04
+Version 0.05
 
 =cut
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 our $ERROR;
 
 use constant SUBFIELD_INDICATOR	=> "\x1F";
@@ -130,13 +130,13 @@ sub new_from_usmarc($) {
 		my $tagno = shift @directory;
 		my $len = shift @directory;
 		my $offset = shift @directory;
-		my $field = shift @fields;
+		my $tagdata = shift @fields;
 
 		# Check directory validity
 		($tagno =~ /^\d\d\d$/)
 			or return _gripe( "Invalid field number in directory: \"$tagno\"" );
 
-		($len == length($field) + 1)
+		($len == length($tagdata) + 1)
 			or $self->_warn( "Invalid length in the directory for tag $tagno" );
 
 		($offset == $databytesused)
@@ -144,18 +144,25 @@ sub new_from_usmarc($) {
 		$databytesused += $len;
 
 		if ( $tagno < 10 ) {
-			$self->add_fields( $tagno, $field )
+			$self->add_fields( $tagno, $tagdata )
 				or return undef; # We're relying on add_fields() having set $MARC::Record::ERROR
 		} else {
-			my ($ind1,$ind2,$subind,$data) = split( "", $field, 4 );
-			($subind eq SUBFIELD_INDICATOR)
-				or return _gripe( "Missing subfield indicator" );
+			my @subfields = split( SUBFIELD_INDICATOR, $tagdata );
+			my $indicators = shift @subfields
+				or return _gripe( "No subfields found." );
+			my ($ind1,$ind2);
+			if ( $indicators =~ /^([0-9 ])([0-9 ])$/ ) {
+				($ind1,$ind2) = ($1,$2);
+			} else {
+				$self->_warn( "Invalid indicators \"$indicators\" forced to blanks\n" );
+				($ind1,$ind2) = (" "," ");
+			}
+				
 			# Split the subfield data into subfield name and data pairs
-			$self->add_fields( $tagno, $ind1, $ind2, 
-				map { (substr($_,0,1),substr($_,1)) } split( SUBFIELD_INDICATOR, $data ) )
+			my @subfield_data = map { (substr($_,0,1),substr($_,1)) } @subfields;
+			$self->add_fields( $tagno, $ind1, $ind2, @subfield_data )
 				or return undef;
 		}
-		# 
 	} # while
 
 	# Once we're done, there shouldn't be any fields left over: They should all have shifted off.
@@ -611,6 +618,7 @@ employers of the various contributors to the code.
 
 =head1 AUTHOR
 
-Andy Lester, E<lt>andy@petdance.comE<gt> or E<lt>alester@flr.follett.comE<gt>
+Andy Lester, E<lt>marc@petdance.comE<gt> or E<lt>alester@flr.follett.comE<gt>
 
 =cut
+

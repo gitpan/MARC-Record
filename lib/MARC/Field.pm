@@ -59,7 +59,10 @@ sub new($) {
 	($tagno =~ /^\d\d\d$/)
 		or return _gripe( "Tag \"$tagno\" is not a valid tag number." );
 
-	my $self = bless { _tag => $tagno }, $class;
+	my $self = bless {
+		_tag => $tagno,
+		_warnings => [],
+		}, $class;
 	
 	if ( $tagno < 10 ) { 
 		$self->{_data} = shift;
@@ -67,8 +70,8 @@ sub new($) {
 		for my $indcode ( qw( _ind1 _ind2 ) ) {
 			my $indicator = shift;
 			if ( $indicator !~ /^[0-9 ]$/ ) {
+				$self->warn( "Invalid indicator \"$indicator\" forced to blank" ) unless ($indicator eq "");
 				$indicator = " ";
-				warn "Invalid indicator \"$indicator\" forced to blank" unless ($indicator eq "");
 			}
 			$self->{$indcode} = $indicator;
 		} # for
@@ -249,13 +252,33 @@ sub as_usmarc() {
 	}
 }
 
+=head2 warnings()
+
+Returns the warnings that were created when the record was read.
+These are things like "Invalid indicators converted to blanks".
+
+The warnings are items that you might be interested in, or might
+not.  It depends on how stringently you're checking data.  If
+you're doing some grunt data analysis, you probably don't care.
+
+=cut
+
+sub warnings() {
+	my $self = shift;
+
+	return @{$self->{_warnings}};
+}
+
+# NOTE: _warn is an object method
+sub _warn($) {
+	my $self = shift;
+
+	push( @{$self->{_warnings}}, join( "", @_ ) );
+}
+
 1;
 
 __END__
-
-=head1 AUTHOR
-
-Andy Lester, E<lt>andy@petdance.comE<gt> or E<lt>alester@flr.follett.comE<gt>
 
 =head1 SEE ALSO
 
@@ -263,8 +286,19 @@ See the "SEE ALSO" section for L<MARC::Record>.
 
 =head1 TODO
 
-=item * 
+See the "TODO" section for L<MARC::Record>.
 
-None
+=cut
+
+=head1 LICENSE
+
+This code may be distributed under the same terms as Perl itself. 
+
+Please note that these modules are not products of or supported by the
+employers of the various contributors to the code.
+
+=head1 AUTHOR
+
+Andy Lester, E<lt>marc@petdance.comE<gt> or E<lt>alester@flr.follett.comE<gt>
 
 =cut

@@ -4,6 +4,6 @@ MANIFEST
 README
 lib/MARC/Record.pm
 lib/MARC/Field.pm
-test.pl
-pl/cameldump
 pl/dupe
+t/camel.t
+t/camel.usmarc
