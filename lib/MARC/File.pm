@@ -29,38 +29,58 @@ None.
 
 =head1 METHODS
 
-=head2 in()
+=head2 C<in()>
 
-Opens a file for input.
+Opens a file for import. Ordinarily you will use C<MARC::File::USMARC>
+or C<MARC::File::MicroLIF> to do this.
 
-Returns a MARC::File object, or C<undef> on failure.
+    my $file = MARC::File::USMARC->in( 'file.marc' );
+
+Returns a C<MARC::File> object, or C<undef> on failure. If you 
+encountered an error the error message will be stored in 
+C<$MARC::File::ERROR>.
+
+Optionally you can also pass in a filehandle, and C<MARC::File>.
+will "do the right thing".
+
+    my $handle = IO::File->new( 'gunzip -c file.marc.gz |' );
+    my $file = MARC::File::USMARC->in( $handle );
 
 =cut
 
 sub in {
     my $class = shift;
-    my $filename = shift;
+    my $arg = shift;
+    my ( $filename, $fh );
 
+    ## if a valid filehandle was passed in
+    my $ishandle = do { no strict; defined fileno($arg); };
+    if ( $ishandle ) {
+	$filename = scalar( $arg );
+	$fh = $arg;
+    }
+
+    ## otherwise check if it's a filename, and 
+    ## return undef if we weren't able to open it
+    else {
+	$filename = $arg;
+	$fh = eval { local *FH; open( FH, $arg ) or die; *FH{IO}; };
+	if ( $@ ) { 
+	    $MARC::File::ERROR = "Couldn't open $filename: $@";
+	    return;
+	}
+    }
+
+    binmode( $fh );
     my $self = {
-	filename    => $filename,
+	filename    => $filename, 
+	fh	    => $fh,
 	recnum	    => 0,
-	warnings   => [],
+	warnings    => [],
     };
 
-    bless $self, $class;
+    return( bless $self, $class );
 
-    my $fh = eval { local *FH; open( FH, $filename ) or die; *FH{IO}; };
-
-    if ( $@ ) {
-	undef $self;
-	$MARC::File::ERROR = "Couldn't open $filename: $@";
-    } else {
-	binmode $fh;
-	$self->{fh} = $fh;
-    }
-	
-
-    return $self;
 } # new()
 
 sub out {
@@ -82,8 +102,8 @@ Returns a MARC::Record reference, or C<undef> on error.
 sub next {
     my $self = shift;
     $self->{recnum}++;
-    my $rec = $self->_next();
-    return $rec ? $self->decode($rec, @_) : undef;
+    my $rec = $self->_next() or return;
+    return $self->decode($rec, @_);
 }
 
 =head2 skip()
@@ -98,17 +118,15 @@ Returns 1 or undef.
 
 sub skip {
     my $self = shift;
-
-    my $rec = $self->_next();
-
-    return $rec ? 1 : undef;
+    my $rec = $self->_next() or return;
+    return 1;
 }
 
-=head2 warnings()
+=head2 C<warnings()>
 
-Simlilar to MARC::Record and MARC::Batch, warnings() will return any 
-warnings that have accumulated while processing this file; and as a 
-side-effect will clear the warnings buffer.
+Simlilar to the methods in L<MARC::Record> and L<MARC::Batch>,
+C<warnings()> will return any warnings that have accumulated while
+processing this file; and as a side-effect will clear the warnings buffer.
 
 =cut 
 
@@ -121,18 +139,15 @@ sub warnings {
 
 sub close {
     my $self = shift;
-
     close( $self->{fh} );
     delete $self->{fh};
     delete $self->{filename};
-
     return;
 }
 
 sub _unimplemented() {
     my $self = shift;
     my $method = shift;
-
     warn "Method $method must be overridden";
 }
 
@@ -155,7 +170,8 @@ sub _gripe(@) {
 	my $self = shift @parms;
 
 	if ( ref($self) =~ /^MARC::File/ ) {
-	    push( @parms, " at byte ", tell($self->{fh}) ) if $self->{fh};
+	    push( @parms, " at byte ", tell($self->{fh}) ) 
+		if $self->{fh};
 	    push( @parms, " in file ", $self->{filename} ) if $self->{filename};
 	} else {
 	    unshift( @parms, $self );
@@ -197,7 +213,7 @@ employers of the various contributors to the code.
 
 =head1 AUTHOR
 
-Andy Lester, E<lt>marc@petdance.comE<gt>
+Andy Lester, C<< <andy@petdance.com> >>
 
 =cut
 

@@ -4,17 +4,6 @@ package MARC::Batch;
 
 MARC::Batch - Perl module for handling files of MARC::Record objects
 
-=cut
-
-use strict;
-use integer;
-use Carp qw( croak );
-
-use constant STRICT_ON		=> 1;
-use constant STRICT_OFF		=> 2;
-use constant WARNINGS_ON	=> 1;
-use constant WARNINGS_OFF	=> 2;
-
 =head1 SYNOPSIS
 
 MARC::Batch hides all the file handling of files of C<MARC::Record>s.
@@ -32,6 +21,12 @@ multiple-file aspects.
 
 None.  Everything is a class method.
 
+=cut
+
+use strict;
+use integer;
+use Carp qw( croak );
+
 =head1 METHODS
 
 =head2 new( $type, @files )
@@ -39,8 +34,22 @@ None.  Everything is a class method.
 Create a C<MARC::Batch> object that will process C<@files>.
 
 C<$type> must be either "USMARC" or "MicroLIF".  If you want to specify 
-"MARC::File::USMARC" or "MARC::File::MicroLIF", that's OK, too. new() returns a
+"MARC::File::USMARC" or "MARC::File::MicroLIF", that's OK, too. C<new()> returns a
 new MARC::Batch object.
+
+C<@files> can be a list of filenames:
+
+    my $batch = MARC::Batch->new( 'USMARC', 'file1.marc', 'file2.marc' );
+
+Your C<@files> may also contain filehandles. So if you've got a large
+file that's gzipped you can open a pipe to F<gzip> and pass it in:
+
+    my $fh = IO::File->new( 'gunzip -c marc.dat.gz |' );
+    my $batch = MARC::Batch->new( 'USMARC', $fh );
+
+And you can mix and match if you really want to:
+
+    my $batch = MARC::Batch->new( 'USMARC', $fh, 'file1.marc' );
 
 =cut
 
@@ -51,19 +60,18 @@ sub new {
     my $marcclass = ($type =~ /^MARC::File/) ? $type : "MARC::File::$type";
 
     eval "require $marcclass";
-    die $@ if $@;
+    croak $@ if $@;
 
     my @files = @_;
 
     my $self = {
-	filelist    =>	[@files],
-	filestack   =>	[@files],
+	filestack   =>	\@files,
 	filename    =>	undef,
 	marcclass   =>	$marcclass,
 	file	    =>  undef,
 	warnings    =>  [],
-	warn	    =>  WARNINGS_ON,
-	strict	    =>  STRICT_ON,
+	'warn'	    =>  1,
+	strict	    =>  1,
     };
 
     bless $self, $class;
@@ -72,18 +80,20 @@ sub new {
 } # new()
 
 
-=head2 next()
+=head2 C<next()>
 
-Read the next record from that batch, and return it as a MARC::Record object.  
-If the current file is at EOF, close it and open the next one. next() will 
-return C<undef> when there is no more data to be read from any batch files.
+Read the next record from that batch, and return it as a MARC::Record
+object.  If the current file is at EOF, close it and open the next
+one. C<next()> will return C<undef> when there is no more data to be
+read from any batch files.
 
-By default, next() also will return C<undef> if an error is encountered while
-reading from the batch. If not checked for this can cause your iteration to
-terminate prematurely. To alter this behavior see strict_off(). You can 
-retrieve warning messages using the warnings() method.
+By default, C<next()> also will return C<undef> if an error is
+encountered while reading from the batch. If not checked for this can
+cause your iteration to terminate prematurely. To alter this behavior,
+see C<strict_off()>. You can retrieve warning messages using the
+C<warnings()> method.
 
-Optionally you can pass in a filter function as a subroutine reference 
+Optionally you can pass in a filter function as a subroutine reference
 if you are only interested in particular fields from the record. This
 can boost performance.
 
@@ -104,7 +114,7 @@ sub next {
 	my @warnings = $self->{file}->warnings();
 	if ( @warnings ) {
 	    $self->warnings( @warnings );
-	    return if $self->{ strict } == STRICT_ON; 
+	    return if $self->{ strict };
 	}
 
 	if ($rec) {
@@ -114,7 +124,7 @@ sub next {
 
 	    if (@warnings) {
 		$self->warnings( @warnings );
-		return if $self->{ strict } == STRICT_ON;
+		return if $self->{ strict };
 	    }
 
 	    # return the MARC::Record object
@@ -138,34 +148,35 @@ sub next {
 
 =head2 strict_off()
 
-If you would like MARC::Batch to continue after it has encountered what 
+If you would like C<MARC::Batch> to continue after it has encountered what 
 it believes to be bad MARC data then use this method to turn strict B<OFF>.
-A call to strict_off() always returns true (1).
+A call to C<strict_off()> always returns true (1).
 
-strict_off() can be handy when you don't care about the quality of your MARC
-data, and just want to plow through it. For safety MARC::Batch strict is B<ON> 
-by default. 
+C<strict_off()> can be handy when you don't care about the quality of your
+MARC data, and just want to plow through it. For safety, C<MARC::Batch>
+strict is B<ON> by default.
 
 =cut
 
 sub strict_off {
     my $self = shift;
-    $self->{ strict } = STRICT_OFF;
+    $self->{ strict } = 0;
     return(1);
 }
 
 =head2 strict_on()
 
-The opposite of strict_off(), and the default state. You shouldn't have to use
-this method unless you've previously used strict_off(), and want it back on
-again.  When strict is B<ON> calls to next() will return undef when an error is
-encountered while reading MARC data. strict_on() always returns true (1).
+The opposite of C<strict_off()>, and the default state. You shouldn't
+have to use this method unless you've previously used C<strict_off()>, and
+want it back on again.  When strict is B<ON> calls to next() will return
+undef when an error is encountered while reading MARC data. strict_on()
+always returns true (1).
 
 =cut
 
 sub strict_on {
     my $self = shift;
-    $self->{ strict } = STRICT_ON;
+    $self->{ strict } = 1;
     return(1);
 }
 
@@ -179,7 +190,7 @@ batch file. As a side effect the warning buffer will be cleared.
 This method is also used internally to set warnings, so you probably don't
 want to be passing in anything as this will set warnings on your batch object.
 
-warnings() will return the empty list when there are no warnings.
+C<warnings()> will return the empty list when there are no warnings.
 
 =cut
 
@@ -187,7 +198,7 @@ sub warnings {
     my ($self,@new) = @_;
     if ( @new ) {
 	push( @{ $self->{warnings} }, @new );
-	print STDERR join( "\n", @new ) if $self->{ warn } == WARNINGS_ON;
+	print STDERR join( "\n", @new ) if $self->{'warn'};
     } else {
 	my @old = @{ $self->{warnings} };
 	$self->{warnings} = [];
@@ -202,13 +213,15 @@ Turns off the default behavior of printing warnings to STDERR. However, even
 with warnings off the messages can still be retrieved using the warnings() 
 method if you wish to check for them.
 
-warnings_off() always returns true (1).
+C<warnings_off()> always returns true (1).
 
 =cut
 
 sub warnings_off {
     my $self = shift;
-    $self->{ warn } = WARNINGS_OFF;
+    $self->{ 'warn' } = 0;
+
+    return 1;
 }
 
 =head2 warnings_on()
@@ -223,7 +236,7 @@ warnings_on() always returns true (1).
 
 sub warnings_on {
     my $self = shift;
-    $self->{ warn } = WARNINGS_ON;
+    $self->{ 'warn' } = 1;
 }
 
 =head2 filename()
@@ -261,7 +274,6 @@ employers of the various contributors to the code.
 
 =head1 AUTHOR
 
-Andy Lester, E<lt>marc@petdance.comE<gt>
+Andy Lester, C<< <andy@petdance.com> >>
 
 =cut
-
