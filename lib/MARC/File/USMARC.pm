@@ -15,13 +15,13 @@ use vars qw( $ERROR );
 
 =head1 VERSION
 
-Version 1.13
+Version 1.14
 
-    $Id: USMARC.pm,v 1.28 2002/11/26 20:51:13 edsummers Exp $
+    $Id: USMARC.pm,v 1.31 2002/11/27 20:12:03 petdance Exp $
 
 =cut
 
-use vars '$VERSION'; $VERSION = '1.13';
+use vars '$VERSION'; $VERSION = '1.14';
 
 use MARC::File;
 use vars qw( @ISA ); @ISA = qw( MARC::File );
@@ -110,24 +110,24 @@ sub decode {
 
     # Check for an all-numeric record length
     ($text =~ /^(\d{5})/)
-	or $marc->_warn( "Record length \"", substr( $text, 0, 5 ), "\" is not numeric $location" );
+	or return $marc->_warn( "Record length \"", substr( $text, 0, 5 ), "\" is not numeric $location" );
 
     my $reclen = $1;
     ($reclen == length($text))
-	or $marc->_warn( "Invalid record length $location: Leader says $reclen bytes, but it's actually ", length( $text ) );
+	or return $marc->_warn( "Invalid record length $location: Leader says $reclen bytes, but it's actually ", length( $text ) );
 
     $marc->leader( substr( $text, 0, LEADER_LEN ) );
     my @fields = split( END_OF_FIELD, substr( $text, LEADER_LEN ) );
-    my $dir = shift @fields or $marc->_warn( "No directory found $location" );
+    my $dir = shift @fields or return $marc->_warn( "No directory found $location" );
 
     (length($dir) % 12 == 0)
-	or $marc->_warn( "Invalid directory length $location" );
+	or return $marc->_warn( "Invalid directory length $location" );
     my $nfields = length($dir)/12;
 
     my $finalfield = pop @fields;
     # Check for the record terminator, and ignore it
     ($finalfield eq END_OF_RECORD)
-    	or $marc->_warn( "Invalid record terminator $location" );
+    	or return $marc->_warn( "Invalid record terminator $location" );
 
     # Walk thru the directories, and shift off the fields while we're at it
     # Shouldn't be any non-digits anywhere in any directory entry
