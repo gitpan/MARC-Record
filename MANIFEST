@@ -30,6 +30,7 @@ t/62.before.t
 t/63.after.t
 t/64.create.t
 t/66.grouped.t
+t/66.ordered.t
 t/70.croak.t
 t/75.warnings.t
 t/80.alphatag.t
@@ -55,4 +56,4 @@ t/sample20.lif
 t/title_proper.t
 t/title_proper.usmarc
 t/utf8.t
-META.yml                                 Module meta-data (added by MakeMaker)
+META.yml
