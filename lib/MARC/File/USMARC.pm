@@ -15,13 +15,13 @@ use vars qw( $ERROR );
 
 =head1 VERSION
 
-Version 1.15
+Version 1.16
 
-    $Id: USMARC.pm,v 1.31 2002/11/27 20:12:03 petdance Exp $
+    $Id: USMARC.pm,v 1.34 2003/01/28 21:41:40 petdance Exp $
 
 =cut
 
-use vars '$VERSION'; $VERSION = '1.15';
+use vars '$VERSION'; $VERSION = '1.16';
 
 use MARC::File;
 use vars qw( @ISA ); @ISA = qw( MARC::File );
@@ -95,15 +95,18 @@ sub decode {
     my $text;
     my $location = '';
 
-    ## decode can be called as a MARC::File::* object method, or as a function
-    ## we need to handle our parms slightly different in each case, and 
-    ## (if appropriate) capture the record number for warnings messages.
-    if ( $self =~ /^MARC::File/ ) {
+    ## decode can be called in a variety of ways
+    ## $object->decode( $string )
+    ## MARC::File::USMARC->decode( $string )
+    ## MARC::File::USMARC::decode( $string )
+    ## this bit of code covers all three
+ 
+    if ( ref($self) =~ /^MARC::File/ ) {
 	$location = 'in record '.$self->{recnum};
 	$text = shift;
     } else {
 	$location = 'in record 1';
-	$text = $self; 
+	$text = $self=~/MARC::File/ ? shift : $self;
     }
 
     my $marc = MARC::Record->new();
@@ -165,21 +168,27 @@ sub decode {
 	    if ( $indicators =~ /^([0-9 ])([0-9 ])$/ ) {
 		($ind1,$ind2) = ($1,$2);
 	    } else {
-		$marc->_warn( "Invalid indicators \"$indicators\" forced to blanks $location for tag $tagno" );
+		$marc->_warn( "Invalid indicators \"$indicators\" forced to blanks $location for tag $tagno\n" );
 		($ind1,$ind2) = (" "," ");
 	    }
 
-	    if ( @subfields == 0 ) {
-		$marc->_warn( "subfield data \"$tagdata\" missing $location ".
-		    "for tag $tagno\n" );
+	    # Split the subfield data into subfield name and data pairs
+	    my @subfield_data;
+	    for ( @subfields ) {
+		if ( length > 0 ) {
+		    push( @subfield_data, substr($_,0,1),substr($_,1) );
+		} else {
+		    $marc->_warn( "Entirely empty subfield found in tag $tagno" );
+		}
+	    }
+
+	    if ( !@subfield_data ) {
+		$marc->_warn( "no subfield data found $location for tag $tagno" );
 		next;
 	    }
 
-	    # Split the subfield data into subfield name and data pairs
-	    my @subfield_data = map { (substr($_,0,1),substr($_,1)) } @subfields;
 	    $marc->append_fields( MARC::Field->new($tagno, $ind1, $ind2, 
 		@subfield_data ) );
-
 	}
     } # while
 

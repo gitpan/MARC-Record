@@ -1,12 +1,28 @@
 Revision history for Perl extension MARC::Record.
 
-1.15	December 2, 2002
-	- Modified error messages to include field data that was parsed
-	  when unable to determine subfields. This data can then be used
-	  to repair the field if necessary.
+1.16	January 28, 2003
+	[ENHANCEMENTS]
+	- title() and author() now return empty strings, rather than
+	  "<No XXX found>"
+	- Added title_proper(), edition() and publication_date()
+	  convenience methods to MARC::Record.
+	- Added more unit tests.
+
+	[FIXES]
+	- marcdump utility will not output LDR when running under --field 
+	  option, unless the LDR is specifically asked for.
+
+1.15	December 8, 2002
+	[FIXES]
+	- Ignores and warns about any completely empty subfields (i.e. not
+	  even any indicators)
+	- MARC::File::USMARC::decode and MARC::File::MicroLIF::decode needed to
+	  be able to be called in a variety of ways: $obj->decode(), 
+	  MARC::File::MicroLIF->decode() and MARC::File::MicroLIF::decode()
+	  Added t/081.decode.t to make sure things are shipshape.
 
 1.14	November 27, 2002
-
+	[FIXES]
 	- Fixed bug in MARC::File::USMARC that was set off by failure of 
 	  t/75.warnings.t under ActivePerl and CygWin.
 
@@ -30,6 +46,7 @@ Revision history for Perl extension MARC::Record.
 	  returned from each function.
 
 1.12	October 9, 2002 
+	[ENHANCEMENTS]
 	- Makefile.PL will now generate PDF and HTML documentation for 
 	  Sourceforge when asked to.
 	- Added a test for insert_field_grouped()
