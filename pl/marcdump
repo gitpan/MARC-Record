@@ -1,0 +1,47 @@
+#!/usr/bin/perl -w
+
+use warnings;
+use strict;
+use integer;
+
+use MARC::Record;
+use Getopt::Long;
+
+use constant USAGE => <<"END";
+Usage: marcdump [options] file [file...]
+	--print	Print out the tags & subfields of each record
+END
+
+my $print;
+my $rc = GetOptions( "print!" => \$print );
+
+my @files = @ARGV;
+(@files > 0) or die USAGE;
+
+my %counts;
+my %errors;
+for my $IN ( @files ) {
+	$counts{$IN} = 0;
+	$errors{$IN} = 0;
+
+	warn "$IN\n";
+	open( IN, "<", $IN ) or die "Couldn't open $IN: $!\n";
+
+	while ( !eof(IN) ) {
+		++$counts{$IN};
+		my $marc = MARC::Record::next_from_file( *IN );
+		if ( $marc ) {
+			print $marc->as_string, "\n\n" if $print;
+		} else {
+			warn $MARC::Record::ERROR;
+			++$errors{$IN};
+		}
+	} # while
+	close IN;
+} # for 
+
+print " Recs  Errs Filename\n";
+print "----- ----- --------\n";
+for my $key ( sort keys %counts ) {
+	printf( "%5d %5d %s\n", $counts{$key}, $errors{$key}, $key );
+} # for
