@@ -15,13 +15,13 @@ use MARC::Field;
 
 =head1 VERSION
 
-Version 0.92
+Version 0.93
 
-    $Id: Record.pm,v 1.14 2002/04/02 18:00:37 petdance Exp $
+    $Id: Record.pm,v 1.17 2002/05/22 03:32:56 petdance Exp $
 
 =cut
 
-our $VERSION = '0.92';
+our $VERSION = '0.93';
 
 use Exporter;
 our @ISA = qw( Exporter );
@@ -151,7 +151,7 @@ sub set_leader_lengths($$) {
 
 =head2 add_fields()
 
-Adds C<MARC::Field> objects to the end of the list.  Returns the number
+Adds MARC::Field objects to the end of the list.  Returns the number
 of fields added, or C<undef> if there was an error.
 
 There are three ways of calling C<add_fields()> to add data to the record.
@@ -342,7 +342,7 @@ sub as_formatted() {
 =head2 title()
 
 Returns the title from the 245 tag.
-Note that it is a string, not a C<MARC::Field> record.
+Note that it is a string, not a MARC::Field record.
 
 =cut
 
@@ -357,7 +357,7 @@ sub title() {
 =head2 author()
 
 Returns the author from the 100, 110 or 111 tag.
-Note that it is a string, not a C<MARC::Field> record.
+Note that it is a string, not a MARC::Field record.
 
 =cut
 
@@ -388,7 +388,7 @@ sub new_from_usmarc {
     return MARC::File::USMARC::decode( $blob );
 }
 
-=head2 as_usmarc( $marcblob )
+=head2 as_usmarc()
 
 This is a wrapper around C<MARC::File::USMARC::encode()> for compatibility with
 older versions of MARC::Record.
@@ -450,14 +450,14 @@ A brief discussion of why MARC::Record is done the way it is:
 =item * It's built for quick prototyping
 
 One of the areas Perl excels is in allowing the programmer to 
-create easy solutions quickly.  C<MARC::Record> is designed along
+create easy solutions quickly.  MARC::Record is designed along
 those same lines.  You want a program to dump all the 6XX
-tags in a file?  C<MARC::Record> is your friend.
+tags in a file?  MARC::Record is your friend.
 
 =item * It's built for extensibility
 
-Currently, I'm using C<MARC::Record> for analyzing bibliographic
-data, but who knows what might happen in the future?  C<MARC::Record>
+Currently, I'm using MARC::Record for analyzing bibliographic
+data, but who knows what might happen in the future?  MARC::Record
 needs to be just as adept at authority data, too.
 
 =item * It's designed around accessor methods
@@ -472,8 +472,8 @@ break your code.
 One of the tradeoffs in using accessor methods is some overhead
 in the method calls.  Is this slow?  I don't know, I haven't measured.
 I would suggest that if you're a cycle junkie that you use
-C<Benchmark.pm> to check to see where your bottlenecks are, and then
-decide if C<MARC::Record> is for you.
+Benchmark.pm to check to see where your bottlenecks are, and then
+decide if MARC::Record is for you.
 
 =back
 
@@ -548,8 +548,6 @@ Ideas are things that have been considered, but nobody's actually asked for.
 =item * Create multiple output formats.
 
 These could be ASCII, XML, or MarcMaker.
-
-=item * Create a clone of a record based on criteria
 
 =back
 
