@@ -15,13 +15,13 @@ use MARC::Field;
 
 =head1 VERSION
 
-Version 0.91
+Version 0.92
 
-    $Id: Record.pm,v 1.12 2002/04/02 14:08:39 petdance Exp $
+    $Id: Record.pm,v 1.14 2002/04/02 18:00:37 petdance Exp $
 
 =cut
 
-$VERSION = '0.91';
+our $VERSION = '0.92';
 
 use Exporter;
 our @ISA = qw( Exporter );
@@ -372,6 +372,28 @@ sub author() {
 	return "<No author tag found>";
 }
 
+=head2 new_from_usmarc( $marcblob )
+
+This is a wrapper around C<MARC::File::USMARC::decode()> for compatibility with
+older versions of MARC::Record.
+
+=cut
+
+sub new_from_usmarc {
+    my $blob = shift;
+    $blob = shift if (ref($blob) || ($blob eq "MARC::Record"));
+
+    require MARC::File::USMARC;
+
+    return MARC::File::USMARC::decode( $blob );
+}
+
+=head2 as_usmarc( $marcblob )
+
+This is a wrapper around C<MARC::File::USMARC::encode()> for compatibility with
+older versions of MARC::Record.
+
+=cut
 
 sub as_usmarc {
     my $self = shift;
