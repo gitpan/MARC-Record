@@ -14,20 +14,20 @@ use vars qw( $ERROR );
 
 =head1 VERSION
 
-Version 1.11
+Version 1.13
 
-    $Id: File.pm,v 1.20 2002/10/10 02:36:09 edsummers Exp $
+    $Id: File.pm,v 1.23 2002/11/26 21:30:05 petdance Exp $
 
 =cut
 
-use vars '$VERSION'; $VERSION = '1.12';
+use vars '$VERSION'; $VERSION = '1.13';
 
 =head1 SYNOPSIS
 
     use MARC::File::USMARC;
 
     my $file = MARC::File::USMARC->in( $filename );
-    
+
     while ( my $marc = $file->next() ) {
 	# Do something
     }
@@ -44,6 +44,8 @@ None.
 
 Opens a file for input.
 
+Returns a MARC::File object, or C<undef> on failure.
+
 =cut
 
 sub in {
@@ -51,8 +53,9 @@ sub in {
     my $filename = shift;
 
     my $self = {
-	filename => $filename,
-	_warnings => [],
+	filename    => $filename,
+	recnum	    => 0,
+	warnings   => [],
     };
 
     bless $self, $class;
@@ -76,12 +79,15 @@ sub out {
 
 =head2 next()
 
-Reads the next record from the file handle passed in. 
+Reads the next record from the file handle passed in.
+
+Returns a MARC::Record reference, or C<undef> on error.
 
 =cut
 
 sub next {
     my $self = shift;
+    $self->{recnum}++;
     my $rec = $self->_next();
     return $rec ? $self->decode($rec) : undef;
 }
@@ -114,8 +120,8 @@ side-effect will clear the warnings buffer.
 
 sub warnings {
     my $self = shift;
-    my @warnings = @{ $self->{_warnings} };
-    $self->{_warnings} = [];
+    my @warnings = @{ $self->{warnings} };
+    $self->{warnings} = [];
     return(@warnings);
 }
 
@@ -143,11 +149,12 @@ sub decode  { $_[0]->_unimplemented("decode"); }
 
 sub _warn {
     my ($self,$warning) = @_;
-    push( @{ $self->{_warnings} }, $warning );
+    push( @{ $self->{warnings} }, "$warning in record ".$self->{recnum} );
     return(undef);
 }
 
 # NOTE: _gripe can be called as an object method, or not.  Your choice.
+# NOTE: it's use is now depracated use _warn instead
 sub _gripe(@) {
     my @parms = @_;
     if ( @parms ) {

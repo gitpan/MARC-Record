@@ -17,13 +17,13 @@ MARC::Field - Perl extension for handling MARC fields
 
 =head1 VERSION
 
-Version 1.11
+Version 1.13
 
-    $Id: Field.pm,v 1.21 2002/10/10 02:36:09 edsummers Exp $
+    $Id: Field.pm,v 1.25 2002/11/26 21:41:24 petdance Exp $
 
 =cut
 
-use vars '$VERSION'; $VERSION = '1.12';
+use vars '$VERSION'; $VERSION = '1.13';
 
 =head1 SYNOPSIS
 
@@ -49,7 +49,7 @@ C<$MARC::Record> usually bubbles up to C<$MARC::Record::ERROR>.
 
 =head1 METHODS
 
-=head2 C<new(tag,indicator1,indicator2,code,data[,code,data...])>
+=head2 new(tag,indicator1,indicator2,code,data[,code,data...])
 
   my $record = 
   	MARC::Field->new( 
@@ -57,6 +57,8 @@ C<$MARC::Record> usually bubbles up to C<$MARC::Record::ERROR>.
 			'a' => 'Raccoons and ripe corn / ',
 			'c' => 'Jim Arnosky.'
 		);
+
+Returns a MARC::Field record.
 
 =cut
 
@@ -98,7 +100,7 @@ sub new($) {
 	return $self;
 } # new()
 
-=head2 C<clone()>
+=head2 clone()
 
 Makes a copy of the field.  Note that this is not just the same as saying
 
@@ -107,6 +109,8 @@ Makes a copy of the field.  Note that this is not just the same as saying
 since that just makes a copy of the reference.  To get a new object, you must
 
     my $newfield = $field->clone;
+
+Returns a MARC::Field record.
 
 =cut
 
@@ -132,15 +136,12 @@ sub clone {
     return $clone;
 }
 
-=head2 C<update()>
+=head2 update()
 
 Allows you to change the values of the field. You can update indicators
 and subfields like this:
 
   $field->update( ind2 => '4', a => 'The ballad of Abe Lincoln');
-
-The amount of items modified will be returned to you as a result of the
-method call.
 
 If you want to update a field that has no indicators or subfields (000-009)
 just call update() with one argument, the string that you would like to 
@@ -152,6 +153,8 @@ set the field to.
 Note: when doing subfield updates be aware that C<update()> will only 
 update the first occurrence. If you need to do anything more complicated
 you need to create a new field and use C<replace_with()>. 
+
+Returns the number of items modified.
 
 =cut
 
@@ -198,7 +201,7 @@ sub update {
 
 }
 
-=head2 C<replace_with()> 
+=head2 replace_with() 
 
 Allows you to replace an existing field with a new one. You need to pass 
 C<replace()> a MARC::Field object to replace the existing field with. For 
@@ -207,6 +210,8 @@ example:
   $field = $record->field('245');
   my $new_field = new MARC::Field('245','0','4','The ballad of Abe Lincoln.');
   $field->replace_with($new_field);
+
+Doesn't return a meaningful or reliable value.
 
 =cut 
 
@@ -221,7 +226,7 @@ sub replace_with {
 }
 
 
-=head2 C<tag()>
+=head2 tag()
 
 Returns the three digit tag for the field.
 
@@ -232,7 +237,7 @@ sub tag {
 	return $self->{_tag};
 }
 
-=head2 C<indicator(indno)>
+=head2 indicator(indno)
 
 Returns the specified indicator.  Returns C<undef> and sets 
 C<$MARC::Field::ERROR> if the I<indno> is not 1 or 2, or if 
@@ -258,7 +263,7 @@ sub indicator($) {
 
 
 
-=head2 C<subfield(code)>
+=head2 subfield(code)
 
 Returns the text from the first subfield matching the subfield code.
 If no matching subfields are found, C<undef> is returned.
@@ -286,7 +291,7 @@ sub subfield {
 	return undef;
 }
 
-=head2 C<subfields()>
+=head2 subfields()
 
 Returns all the subfields in the field.  What's returned is a list of 
 lists, where the inner list is a subfield code and the subfield data. 
@@ -322,7 +327,7 @@ sub _gripe(@) {
 	return undef;
 }
 
-=head2 C<data()>
+=head2 data()
 
 Returns the data part of the field, if the tag number is less than 10.
 
@@ -340,7 +345,7 @@ sub data($) {
 	return $self->{_data};
 }
 
-=head2 C<add_subfields(code,text[,code,text ...])>
+=head2 add_subfields(code,text[,code,text ...])
 
 Adds subfields to the end of the subfield list.
 
@@ -358,7 +363,7 @@ sub add_subfields(@) {
 	return @_/2;
 }
 
-=head2 C<as_string()>
+=head2 as_string()
 
 Returns a string of all subfields run together, without the tag number.
 
@@ -384,7 +389,7 @@ sub as_string() {
 }
 
 
-=head2 C<as_formatted()>
+=head2 as_formatted()
 
 Returns a pretty string for printing in a MARC dump.
 
@@ -413,7 +418,7 @@ sub as_formatted() {
 }
 
 
-=head2 C<as_usmarc()>
+=head2 as_usmarc()
 
 Returns a string for putting into a USMARC file.  It's really only
 useful by C<MARC::Record::as_usmarc()>.
@@ -442,7 +447,7 @@ sub as_usmarc() {
 	}
 }
 
-=head2 C<warnings()>
+=head2 warnings()
 
 Returns the warnings that were created when the record was read.
 These are things like "Invalid indicators converted to blanks".
