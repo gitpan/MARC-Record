@@ -1,5 +1,10 @@
 Revision history for Perl extension MARC::Record.
 
+1.15	December 2, 2002
+	- Modified error messages to include field data that was parsed
+	  when unable to determine subfields. This data can then be used
+	  to repair the field if necessary.
+
 1.14	November 27, 2002
 
 	- Fixed bug in MARC::File::USMARC that was set off by failure of 
