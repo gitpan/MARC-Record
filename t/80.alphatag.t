@@ -1,4 +1,4 @@
-use Test::More tests => 30;
+use Test::More tests => 31;
 
 use strict;
 
@@ -47,8 +47,10 @@ is( $field->subfield('a'), '123', 'update()' );
 is_deeply( $field->subfields(), [ 'a' => 123 ], 'subfields()' );
 is( $field->tag(), 'RAZ', 'tag()' );
 
-eval { $field->data() };
-like( $@, qr/data\(\) is only for tags less than 010/, 'data()' );
+my $d = $field->data();
+is( $d, undef, 'calling data() on field>10 returned undef' );
+my @w = $field->warnings();
+like( $w[0], qr/data\(\) is only for tags less than 010/, 'warning available' );
 
 is( $field->indicator(1), '1', 'indicator(1)' );
 is( $field->indicator(2), '2', 'indicator(2)' );
@@ -80,18 +82,19 @@ is( scalar(@fields), 2, 'field(regex)' );
 
 my $marc = $record->as_usmarc();
 
-open(OUT,">$0.usmarc");
+my $filename = "$$.usmarc";
+open(OUT,">$filename");
 print OUT $record->as_usmarc();
 close(OUT);
 
-my $file = MARC::File::USMARC->in( "$0.usmarc" );
-isa_ok( $file, 'MARC::File::USMARC' );
+my $file = MARC::File::USMARC->in( $filename );
+isa_ok( $file, 'MARC::File::USMARC', "Opened $filename" );
 
 my $newRec = $file->next();
 isa_ok( $newRec, 'MARC::Record' );
 
 is( $newRec->as_usmarc(), $marc, 'as_usmarc()' );
-unlink( "$0.usmarc" );
+unlink( $filename );
 
 
 ## test output as MicroLIF

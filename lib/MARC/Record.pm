@@ -14,14 +14,14 @@ use vars qw( $ERROR );
 use MARC::Field;
 use Carp qw(croak);
 
-=head1 VERSION 1.32
+=head1 VERSION 1.33
 
-    $Id: Record.pm,v 1.68 2003/11/05 19:39:53 edsummers Exp $
+    $Id: Record.pm,v 1.71 2003/11/25 00:06:57 edsummers Exp $
 
 =cut
 
 use vars qw( $VERSION );
-$VERSION = '1.32';
+$VERSION = '1.33';
 
 use Exporter;
 use vars qw( @ISA @EXPORTS @EXPORT_OK );
@@ -347,7 +347,7 @@ sub insert_fields_after {
 =head2 insert_fields_ordered(@new_fields)
 
 Will insert fields in strictly numerical order. So a 008 will be filed
-after a 001 field.
+after a 001 field. See insert_grouped_field() for an additional ordering.
 
 =cut
 
@@ -378,17 +378,19 @@ sub insert_fields_ordered {
 
 =head2 insert_grouped_field(field)
 
-Will insert the specified MARC::Field object into the record in 'grouped
-order' and return true (1) on success, and false (undef) on failure.
-For example, if a '650' field is inserted with insert_grouped_field()
-it will be inserted at the end of the 6XX group of tags. After some discussion
-on the perl4lib list it was decided that this is ordinarily what you will 
-want. If you would like to insert at a specific point in the record you can use 
-insert_fields_after() and insert_fields_before() methods which are described 
-below. 
+Will insert the specified MARC::Field object into the record in grouped
+order and return true (1) on success, and false (undef) on failure.
 
     my $field = MARC::Field->new( '510', 'Indexed by Google.' );
     $record->insert_grouped_field( $field );
+
+For example, if a '650' field is inserted with insert_grouped_field()
+it will be inserted at the end of the 6XX group of tags. After discussion
+most people wanted the ability to add a new field to the end of the 
+hundred group where it belonged. The reason is that according to the MARC
+format, fields within a record are supposed to be grouped by block 
+(hundred groups). This means that fields may not necessarily be in tag 
+order.
 
 =cut
 
@@ -660,7 +662,7 @@ sub add_fields {
 sub _warn {
     my $self = shift;
     push( @{$self->{_warnings}}, join( "", @_ ) );
-    return($self);
+    return( $self );
 }
 
 

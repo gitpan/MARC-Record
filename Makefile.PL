@@ -2,7 +2,6 @@ use 5.005;
 use strict;
 use ExtUtils::MakeMaker;
 use File::Find;
-use File::Copy;
 
 find( \&filecheck, "." );
 
@@ -24,7 +23,7 @@ sub filecheck {
 			    'File::Find' => 0,
 			    'Carp' => 0,
 			    },
-	EXE_FILES	=> [ qw( pl/marcdump pl/marclint ) ],
+	EXE_FILES	=> [ qw( bin/marcdump bin/marclint ) ],
 	dist 		=> {
 			    COMPRESS => 'gzip -9f', 
 			    SUFFIX => 'gz',
@@ -33,28 +32,4 @@ sub filecheck {
 			    Makefile => '$(VERSION_FROM)'
 			    },
 	
-	);
-
-
-## this is a handy routine for building PDF and HTML documentation
-## from POD for the marcpm.sf.net website
-
-if ( shift eq 'sfdocs' ) {
-    print "making HTML and PDF for SourceForge, sfdocs.tar.gz\n";
-    mkdir("sfdocs");
-    find( { wanted => \&sfdocs, no_chdir => 1 }, "lib" ); 
-    unlink <*~~>;
-    system( "tar cvfz sfdocs.tar.gz sfdocs/ > /dev/null");
-    system( "rm -rf sfdocs" );
-}
-
-sub sfdocs {
-    if ( $File::Find::name =~ m{.+/(.+)\.(pm|pod)$} ) {
-	my $html = "$1.html";
-	my $pdf = "$1.pdf";
-	system( "pod2html $File::Find::name > sfdocs/$html" );
-	system( "pod2pdf $File::Find::name" );
-	move( "$File::Find::name.pdf", "sfdocs/$pdf" );
-    }
-}
-
+);
