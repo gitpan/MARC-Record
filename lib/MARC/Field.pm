@@ -1,16 +1,13 @@
 package MARC::Field;
 
-use 5.6.0;
+use 5.005;
 use strict;
-use warnings;
 use integer;
 
 use constant SUBFIELD_INDICATOR => "\x1F";
 use constant END_OF_FIELD       => "\x1E";
 
-our $ERROR = undef;
-
-=pod
+use vars qw( $ERROR );
 
 =head1 NAME
 
@@ -40,7 +37,7 @@ C<$MARC::Record> usually bubbles up to C<$MARC::Record::ERROR>.
 
 =head1 METHODS
 
-=head2 new(tag,indicator1,indicator2,code,data[,code,data...])
+=head2 C<new(tag,indicator1,indicator2,code,data[,code,data...])>
 
   my $record = 
   	MARC::Field->new( 
@@ -86,7 +83,7 @@ sub new($) {
 	return $self;
 } # new()
 
-=head2 tag()
+=head2 C<tag()>
 
 Returns the three digit tag for the field.
 
@@ -97,7 +94,7 @@ sub tag {
 	return $self->{_tag};
 }
 
-=head2 indicator(indno)
+=head2 C<indicator(indno)>
 
 Returns the specified indicator.  Returns C<undef> and sets 
 C<$MARC::Field::ERROR> if the I<indno> is not 1 or 2, or if 
@@ -123,7 +120,7 @@ sub indicator($) {
 
 
 
-=head2 subfield(code)
+=head2 C<subfield(code)>
 
 Returns the text from the first subfield matching the subfield code.
 If no matching subfields are found, C<undef> is returned.
@@ -149,7 +146,7 @@ sub subfield {
 	return undef;
 }
 
-=head2 subfields()
+=head2 C<subfields()>
 
 Returns all the subfields in the field.  What's returned is a list of 
 lists, where the inner list is a subfield code and the subfield data. 
@@ -183,7 +180,7 @@ sub _gripe(@) {
 	return undef;
 }
 
-=head2 data
+=head2 C<data()>
 
 Returns the data part of the field, if the tag number is less than 10.
 
@@ -201,7 +198,7 @@ sub data($) {
 	return $self->{_data};
 }
 
-=head2 add_subfields(code,text[,code,text ...])
+=head2 C<add_subfields(code,text[,code,text ...])>
 
 Adds subfields to the end of the subfield list.
 
@@ -219,14 +216,37 @@ sub add_subfields(@) {
 	return @_/2;
 }
 
+=head2 C<as_string()>
 
-=head2 as_string()
+Returns a string of all subfields run together, without the tag number.
+
+=cut
+
+sub as_string() {
+	my $self = shift;
+
+	return $self->{_data} if $self->tag < 10;
+
+	my @subs;
+
+	my @subdata = @{$self->{_subfields}};
+	while ( @subdata ) {
+		my $code = shift @subdata;
+		my $text = shift @subdata;
+		push( @subs, $text );
+	} # for
+
+	return join( " ", @subs );
+}
+
+
+=head2 C<as_formatted()>
 
 Returns a pretty string for printing in a MARC dump.
 
 =cut
 
-sub as_string() {
+sub as_formatted() {
 	my $self = shift;
 
 	my @lines;
@@ -251,7 +271,7 @@ sub as_string() {
 }
 
 
-=head2 as_usmarc()
+=head2 C<as_usmarc()>
 
 Returns a string for putting into a USMARC file.  It's really only
 useful by C<MARC::Record::as_usmarc()>.
@@ -280,7 +300,7 @@ sub as_usmarc() {
 	}
 }
 
-=head2 warnings()
+=head2 C<warnings()>
 
 Returns the warnings that were created when the record was read.
 These are things like "Invalid indicators converted to blanks".

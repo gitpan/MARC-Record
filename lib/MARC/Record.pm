@@ -6,21 +6,20 @@ MARC::Record - Perl extension for handling MARC records
 
 =cut
 
-use 5.6.0;
+use 5.004;
 use strict;
-use warnings;
 use integer;
+use vars qw( $VERSION $ERROR );
 
 use MARC::Field;
 
 =head1 VERSION
 
-Version 0.07
+Version 0.08
 
 =cut
 
-our $VERSION = '0.07';
-our $ERROR;
+$VERSION = '0.08';
 
 use constant SUBFIELD_INDICATOR	=> "\x1F";
 use constant END_OF_FIELD	=> "\x1E";
@@ -279,7 +278,7 @@ There are three ways of calling C<add_fields()> to add data to the record.
 	        );
   $marc->add_fields( $author );
 
-=item 2 Add the data fields directly, and let add_fields() take care of the objectifying.
+=item 2 Add the data fields directly, and let C<add_fields()> take care of the objectifying.
 
   $marc->add_fields(
         245, "1", "0",
@@ -406,22 +405,53 @@ sub subfield($$) {
 } # subfield()
 
 
-=head2 as_string()
+=head2 as_formatted()
 
 Returns a pretty string for printing in a MARC dump.
 
 =cut
 
-sub as_string() {
+sub as_formatted() {
 	my $self = shift;
 		
 	my @lines = ( "LDR " . ($self->{_leader} || "") );
 	for my $field ( @{$self->{_fields}} ) {
-		push( @lines, $field->as_string() );
+		push( @lines, $field->as_formatted() );
 	}
 
 	return join( "\n", @lines );
-} # as_string
+} # as_formatted
+
+=head2 title()
+
+Returns the title from the 245 tag
+
+=cut
+
+sub title() {
+	my $self = shift;
+
+	my $field = $self->field(245) or return "<no 245 tag found>";
+
+	return $field->as_string;
+}
+
+=head2 author()
+
+Returns the author from the 100, 110 or 111 tag.
+
+=cut
+
+sub author() {
+	my $self = shift;
+
+	for my $tag ( qw( 100 110 111 ) ) {
+		my $field = $self->field($tag);
+		return $field->as_string() if $field;
+	}
+
+	return "<No author tag found>";
+}
 
 
 =head2 _build_tag_directory()
@@ -624,7 +654,7 @@ Ideas are things that have been considered, but nobody's actually asked for.
 =item * Read from MicroLIF
 
 Create a C<new_from_microlif()> function that would handle the pretty 
-MicroLIF format.  Basically, a reverse of C<as_string()>.
+MicroLIF format.  Basically, a reverse of C<as_microlif()>.
 
 =item * Create multiple output formats.
 

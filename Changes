@@ -1,5 +1,15 @@
 Revision history for Perl extension MARC::Record.
 
+0.08	May 23, 2001
+	- Added the marclint program.
+	- Added the rest of the rules for the 5XX tags forward.
+	- Made the modules compatible with Perl 5.004.  The exception
+	  is MARC::Lint, which requires 5.005 because of the qr//
+	  operator.
+	- as_string() methods now return raw strings, without any special
+	  formatting.  To get the formatted strings from versions <=0.07,
+	  use as_formatted().
+
 0.07	May 22, 2001
 	- Added the rudimentary MARC::Lint module.
 	- Added parms to marcdump program

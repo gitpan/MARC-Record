@@ -6,9 +6,8 @@ MARC::Lint - Perl extension for checking validity of MARC records
 
 =cut
 
-use 5.6.0;
+use 5.005;
 use strict;
-use warnings;
 use integer;
 
 use MARC::Record;
@@ -22,7 +21,7 @@ use MARC::Field;
 
 
   my $linter = new MARC::Lint;
-  
+
   open( IN, "<", $filename ) or die "Couldn't open $filename: $!\n";
   binmode( IN ); # for the Windows folks
   while ( !eof(IN) ) {
@@ -43,16 +42,19 @@ use MARC::Field;
 
 Given the following MARC record:
 
-  100 14 _aWall, Larry.
-  110 1  _aO'Reilly & Associates.
-  245 90 _aProgramming Perl /
-         _aBig Book of Perl /
-         _cLarry Wall, Tom Christiansen & Jon Orwant.
-  250    _a3rd ed.
-  250    _a3rd ed.
-  260    _aCambridge, Mass. :
-         _bO'Reilly,
-         _r2000.
+	LDR 00000nam  22002538a 4500
+	100 14 _aWall, Larry.
+	110 1  _aO'Reilly & Associates.
+	245 90 _aProgramming Perl /
+               _aBig Book of Perl /
+               _cLarry Wall, Tom Christiansen & Jon Orwant.
+	250    _a3rd ed.
+	250    _a3rd ed.
+	260    _aCambridge, Mass. :
+	       _bO'Reilly,
+	       _r2000.
+	590 4  _aPersonally signed by Larry.
+	856 43 _uhttp://www.perl.com/
 
 the following errors are generated:
 
@@ -63,6 +65,8 @@ the following errors are generated:
 	250: Field is not repeatable.
 	260: Subfield _r is not valid.
 	260: Must have a subfield _c.
+	590: Indicator 1 must be blank
+	856: Indicator 2 must be blank, 0, 1, 2 or 8
 
 =head1 DESCRIPTION
 
@@ -110,7 +114,7 @@ Returns a list of warnings found by C<check_record()> and its brethren.
 sub warnings {
 	my $self = shift;
 
-	return @{$self->{_warnings}};
+	return wantarray ? @{$self->{_warnings}} : scalar @{$self->{_warnings}};
 }
 
 =head2 C<clear_warnings()>
@@ -123,7 +127,7 @@ when you call C<check_record()>.
 sub clear_warnings {
 	my $self = shift;
 
-	@{$self->{_warnings}} = [];
+	$self->{_warnings} = [];
 }
 
 =head2 C<warn(str[,str...])>
@@ -154,7 +158,8 @@ sub check_record {
 	my $self = shift;
 	my $marc = shift;
 
-	
+	$self->clear_warnings();
+
 	(ref($marc) eq "MARC::Record")
 		or return $self->warn( "Must pass a MARC::Record object to check_record" );
 
@@ -179,8 +184,13 @@ sub check_record {
 
 		if ( $tagno >= 10 ) {
 			for my $ind ( 1..2 ) {
-				if ( not ($field->indicator($ind) =~ $tagrules->{"ind$ind" . "_regex"}) ) {
-					$self->warn( "$tagno: Indicator $ind must be ", $tagrules->{"ind$ind" . "_desc"} );
+				my $indvalue = $field->indicator($ind);
+				if ( not ($indvalue =~ $tagrules->{"ind$ind" . "_regex"}) ) {
+					$self->warn( 
+						"$tagno: Indicator $ind must be ", 
+						$tagrules->{"ind$ind" . "_desc"}, 
+						" but it's \"$indvalue\"" 
+					);
 				}
 			}
 			
@@ -278,36 +288,58 @@ sub _read_rules() {
 
 		my $tagno = shift @keyvals;
 		my $repeatable = shift @keyvals;
-
-		my $rules = ($self->{_rules}->{$tagno} ||= {});
-		$rules->{$repeatable} = $repeatable;
-
-		while ( @keyvals ) {
-			my $key = shift @keyvals;
-			my $val = shift @keyvals;
-			
-			$rules->{$key} = $val;
-
-			# Do magic for indicators
-			if ( $key =~ /^ind/ ) {
-				my $desc;
-				my $regex;
-				
-				if ( $val eq "blank" ) {
-					$desc = "blank";
-					$regex = qr/^ $/;
-				} else {
-					$desc = _nice_list($val);
-					$regex = qr/^[$val]$/;
-				}
-
-			$rules->{$key."_desc"} = $desc;
-			$rules->{$key."_regex"} = $regex;
-			}
+		
+		my @tag_range = ($tagno);
+		if ( $tagno =~ /^(\d\d)X/ ) {
+			my $base = $1;
+			@tag_range = ( "${base}0" .. "${base}9" );
 		}
+
+		# Handle the ranges of tags.
+		for my $currtag ( @tag_range ) {
+			$self->_parse_tag_rules( $currtag, $repeatable, @keyvals );
+		} # for
+		# I guess I could just have multiple references to the same tag, but I'm not that worried about memory
 	} # while
+
 	seek( DATA, $tell, 0 );
 }
+
+sub _parse_tag_rules {
+	my $self = shift;
+	my $tagno = shift;
+	my $repeatable = shift;
+	my @keyvals = @_;
+
+	my $rules = ($self->{_rules}->{$tagno} ||= {});
+	$rules->{$repeatable} = $repeatable;
+
+	while ( @keyvals ) {
+		my $key = shift @keyvals;
+		my $val = shift @keyvals;
+		
+		$rules->{$key} = $val;
+
+		# Do magic for indicators
+		if ( $key =~ /^ind/ ) {
+			my $desc;
+			my $regex;
+			
+			if ( $val eq "blank" ) {
+				$desc = "blank";
+				$regex = qr/^ $/;
+			} else {
+				$desc = _nice_list($val);
+				$val =~ s/^b/ /;
+				$regex = qr/^[$val]$/;
+			}
+
+		$rules->{$key."_desc"} = $desc;
+		$rules->{$key."_regex"} = $regex;
+		} # if indicator
+	} # while
+}
+
 
 sub _nice_list($) {
 	my $str = shift;
@@ -317,6 +349,7 @@ sub _nice_list($) {
 	}
 
 	my @digits = split( //, $str );
+	$digits[0] = "blank" if $digits[0] eq "b";
 	my $last = pop @digits;
 	return join( ", ", @digits ) . " or $last";
 }
@@ -333,6 +366,37 @@ sub _ind_regex($) {
 1;
 
 __DATA__
+010	NR
+ind1	blank
+ind2	blank
+a	NR
+z	NR
+
+016	R
+ind1	b7
+ind2	blank
+a	NR
+z	R
+2	NR
+
+020	R
+ind1	blank
+ind2	blank
+a	R
+c	R
+
+022	R
+ind1	blank
+ind2	blank
+a	NR
+
+040	NR
+ind1	blank
+ind2	blank
+a	NR
+c	NR
+d	R
+
 100	NR
 ind1	013
 ind2	blank
@@ -431,6 +495,223 @@ ind2	blank
 a	R
 v	R
 
+500	R
+ind1	blank
+ind2	blank
+a	NR
+
+504	R
+ind1	blank
+ind2	blank
+a	NR
+
+505	R
+ind1	0128
+ind2	b0
+a	NR
+g	R
+r	R
+t	R
+
+520	R
+ind1	b018
+ind2	blank
+a	R
+b	R
+
+521	R
+ind1	b012348
+ind2	blank
+a	R
+b	NR
+
+526	R
+ind1	08
+ind2	blank
+a	NR
+b	NR
+c	NR
+d	NR
+i	NR
+x	R
+z	R
+
+538	R
+ind1	blank
+ind2	blank
+a	NR
+
+546	R
+ind1	blank
+ind2	blank
+a	NR
+
+586	R
+ind1	b8
+ind2	blank
+a	NR
+
+59X	R
+ind1	blank
+ind2	blank
+a	NR
+
+600	R
+ind1	013
+ind2	012567
+a	NR
+q	NR
+b	R
+c	R
+d	NR
+t	NR
+v	R
+x	R
+y	R
+z	R
+2	NR
+
+610	R
+ind1	012
+ind2	012567
+a	NR
+b	R
+t	NR
+v	R
+x	R
+y	R
+z	R
+2	NR
+
+611	R
+ind1	012
+ind2	012567
+a	NR
+n	R
+d	NR
+c	NR
+v	R
+x	R
+y	R
+z	R
+2	NR
+
+630	R
+ind1	0-9
+ind2	012567
+a	NR
+n	R
+p	R
+l	NR
+k	R
+s	NR
+f	NR
+v	R
+x	R
+y	R
+z	R
+2	NR
+
+650	R
+ind1	blank
+ind2	012567
+a	NR
+v	R
+x	R
+y	R
+z	R
+2	NR
+
+651	R
+ind1	blank
+ind2	012567
+a	NR
+v	R
+x	R
+y	R
+z	R
+2	NR
+
+655	R
+ind1	blank
+ind2	7
+a	NR
+v	R
+x	R
+y	R
+z	R
+2	NR
+
+658	R
+ind1	blank
+ind2	blank
+a	NR
+b	R
+c	NR
+d	NR
+2	NR
+
+69X	R
+ind1	blank
+ind2	blank
+a	NR
+v	R
+x	R
+y	R
+z	R
+
+700	R
+ind1	013
+ind2	b2
+a	NR
+q	NR
+b	R
+c	R
+d	NR
+k	R
+t	NR
+e	R
+f	NR
+
+710	R
+ind1	012
+ind2	b2
+a	NR
+b	R
+e	R
+t	NR
+
+711	R
+ind1	012
+ind2	b2
+a	NR
+n	R
+d	NR
+c	NR
+t	NR
+e	R
+
+730	R
+ind1	0-9
+ind2	b2
+a	NR
+n	R
+p	R
+h	NR
+l	NR
+k	R
+s	NR
+f	NR
+
+740	R
+ind1	0-9
+ind2	b2
+a	NR
+h	NR
+n	R
+p	R
+
+
 800	R
 ind1	013
 ind2	blank
@@ -442,3 +723,31 @@ d	NR
 t	NR
 e	R
 v	NR
+
+852	R
+ind1	b01234568
+ind2	b012
+a	NR
+b	R
+h	NR
+i	R
+k	NR
+m	NR
+t	NR
+p	NR
+9	NR
+
+856	R
+ind1	b012347
+ind2	b0128
+a	R
+b	NR
+d	R
+f	R
+h	NR
+i	R
+u	R
+x	R
+z	R
+2	NR
+3	NR

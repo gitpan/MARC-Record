@@ -2,7 +2,6 @@
 #
 # Bugs, comments, suggestions welcome: marc@petdance.com
 
-use warnings;
 use strict;
 use integer;
 
@@ -81,7 +80,7 @@ judge( "as_usmarc()" );
 
 # Test 2: as_string()
 my $expected = join( "", <DATA> );
-my $generated = $marc->as_string;
+my $generated = $marc->as_formatted;
 chomp $expected;
 chomp $generated;
 ($generated eq $expected) or error( "String representation not what I expected" );

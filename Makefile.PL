@@ -1,4 +1,4 @@
-use 5.6.0;
+use 5.005;
 use strict;
 use ExtUtils::MakeMaker;
 
@@ -19,7 +19,7 @@ sub filecheck {
 	PMLIBDIRS	=> [ qw( lib/ ) ],
 	AUTHOR		=> 'Andy Lester <andy@petdance.com>',
 	PREREQ_PM	=> {},
-	EXE_FILES	=> [ qw( pl/marcdump ) ],
+	EXE_FILES	=> [ qw( pl/marcdump pl/marclint ) ],
 	dist 		=> {
 				COMPRESS => 'gzip -9f', 
 				SUFFIX => 'gz',
