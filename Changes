@@ -1,5 +1,9 @@
 Revision history for Perl extension MARC::Record.
 
+0.07	May 22, 2001
+	- Added the rudimentary MARC::Lint module.
+	- Added parms to marcdump program
+
 0.06	May 16, 2001
 	- Added marcdump program as demo and actual useful code
 

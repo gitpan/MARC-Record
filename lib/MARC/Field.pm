@@ -70,7 +70,7 @@ sub new($) {
 		for my $indcode ( qw( _ind1 _ind2 ) ) {
 			my $indicator = shift;
 			if ( $indicator !~ /^[0-9 ]$/ ) {
-				$self->warn( "Invalid indicator \"$indicator\" forced to blank" ) unless ($indicator eq "");
+				$self->_warn( "Invalid indicator \"$indicator\" forced to blank" ) unless ($indicator eq "");
 				$indicator = " ";
 			}
 			$self->{$indcode} = $indicator;
@@ -147,6 +147,34 @@ sub subfield {
 	}
 
 	return undef;
+}
+
+=head2 subfields()
+
+Returns all the subfields in the field.  What's returned is a list of 
+lists, where the inner list is a subfield code and the subfield data. 
+
+For example, this might be the subfields from a 245 field:
+
+	[
+	  [ 'a', 'Perl in a nutshell :' ],
+	  [ 'b', 'A desktop quick reference.' ],
+	]
+
+=cut
+
+sub subfields {
+	my $self = shift;
+
+	($self->tag >= 10)
+		or return _gripe( "Fields below 010 do not have subfields" );
+
+	my @list;
+	my @data = @{$self->{_subfields}};
+	while ( defined( my $code = shift @data ) ) {
+		push( @list, [$code, shift @data] );
+	}
+	return @list;
 }
 
 sub _gripe(@) {

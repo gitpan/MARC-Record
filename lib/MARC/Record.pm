@@ -15,11 +15,11 @@ use MARC::Field;
 
 =head1 VERSION
 
-Version 0.06
+Version 0.07
 
 =cut
 
-our $VERSION = '0.06';
+our $VERSION = '0.07';
 our $ERROR;
 
 use constant SUBFIELD_INDICATOR	=> "\x1F";
@@ -123,9 +123,14 @@ sub new_from_usmarc($) {
 		or $self->_warn( "Invalid record terminator: \"$finalfield\"" );
 
 	# Walk thru the directories, and shift off the fields while we're at it
-	my $databytesused = 0;
+	# Shouldn't be any non-digits anywhere in any directory entry
 	my @directory = unpack( "A3 A4 A5" x $nfields, $dir );
+	my @bad = grep /\D/, @directory;
+	if ( @bad ) { 
+		return _gripe( "Non-numeric entries in the tag directory: ", join( ", ", map { "\"$_\"" } @bad ) );
+	}
 
+	my $databytesused = 0;
 	while ( @directory ) {
 		my $tagno = shift @directory;
 		my $len = shift @directory;
@@ -265,6 +270,8 @@ of fields added, or C<undef> if there was an error.
 
 There are three ways of calling C<add_fields()> to add data to the record.
 
+=over 4
+
 =item 1 Create a MARC::Field object and add it
 
   my $author = MARC::Field->new(
@@ -286,6 +293,8 @@ There are three ways of calling C<add_fields()> to add data to the record.
 	[ 250, " ", " ", a => "1st ed." ],
 	[ 650, "1", " ", a => "Raccoons." ],
 	);
+
+=back
 
 =cut
 
@@ -515,6 +524,8 @@ __END__
 
 A brief discussion of why MARC::Record is done the way it is:
 
+=over 4
+
 =item * It's built for quick prototyping
 
 One of the areas Perl excels is in allowing the programmer to 
@@ -543,11 +554,11 @@ I would suggest that if you're a cycle junkie that you use
 C<Benchmark.pm> to check to see where your bottlenecks are, and then
 decide if C<MARC::Record> is for you.
 
-
-
-
+=back
 
 =head1 SEE ALSO
+
+=over 4
 
 =item * perl4lib (L<http://www.rice.edu/perl4lib/>)
 
@@ -569,10 +580,17 @@ Online version of the free booklet.  An excellent overview of the MARC format.  
 Follett Software Company's
 (L<http://www.fsc.follett.com/>) monthly discussion of various MARC tags.
 
+=back
 
 =head1 TODO
 
-=item * Create a meaningful test suite
+=over 4
+
+=item * Incorporate MARC.pm in the distribution.
+
+Combine MARC.pm and MARC::* into one distribution.
+
+=item * Podify MARC.pm
 
 =item * Allow regexes across the entire tag
 
@@ -595,19 +613,26 @@ Imagine something like this:
 
 =item * Modifying an existing field
 
+=back
+
 =head1 IDEAS
 
 Ideas are things that have been considered, but nobody's actually asked for.
 
-=item * Validity checking
+=over 4
 
-The leader and the 008 are the most obvious candidates for checking.
+=item * Read from MicroLIF
+
+Create a C<new_from_microlif()> function that would handle the pretty 
+MicroLIF format.  Basically, a reverse of C<as_string()>.
 
 =item * Create multiple output formats.
 
 These could be ASCII, XML, or MarcMaker.
 
 =item * Create a clone of a record based on criteria
+
+=back
 
 =head1 LICENSE
 
