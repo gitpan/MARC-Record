@@ -1,5 +1,9 @@
 Revision history for Perl extension MARC::Record.
 
+0.10	September 27, 2001
+	- Correctly updates the base address in the leader.  Thanks to
+	Tim Wentz (twentz@mc.net) for finding & fixing.
+
 0.09	August 9, 2001
 	- Updated rules from "Understanding MARC" book.
 	- Added delete_field() method.

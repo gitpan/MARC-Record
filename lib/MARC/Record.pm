@@ -15,11 +15,11 @@ use MARC::Field;
 
 =head1 VERSION
 
-Version 0.09
+Version 0.10
 
 =cut
 
-$VERSION = '0.09';
+$VERSION = '0.10';
 $DEBUG = 0;
 
 use constant SUBFIELD_INDICATOR	=> "\x1F";
@@ -243,25 +243,25 @@ written out to a file.
 sub update_leader() {
 	my $self = shift;
 
-	my (undef,undef,$len) = $self->_build_tag_directory();
+	my (undef,undef,$reclen,$baseaddress) = $self->_build_tag_directory();
 
-	$self->_set_record_length($len);
+	$self->_set_leader_lengths( $reclen, $baseaddress );
 }
 
-=head2 _set_record_length($) 
+=head2 _set_leader_lengths($$) 
 
-Internal function for updating the leader's length.
+Internal function for updating the leader's length and base address.
 
 =cut
 
-sub _set_record_length($) {
+sub _set_leader_lengths($$) {
 	my $self = shift;
-	my $len = shift;
+	my $reclen = shift;
+	my $baseaddr = shift;
 
-	substr($self->{_leader},0,5) = sprintf("%05d",$len);
+	substr($self->{_leader},0,5)  = sprintf("%05d",$reclen);
+	substr($self->{_leader},12,5) = sprintf("%05d",$baseaddr);
 }
-
-
 
 =head2 add_fields()
 
@@ -488,8 +488,9 @@ sub author() {
 Function for internal use only: Builds the tag directory that gets
 put in front of the data in a MARC record.
 
-Returns two array references, and a length: The tag directory, and the data fields themselves,
-and the length of all data, including the Leader that we expect will be added.
+Returns two array references, and two lengths: The tag directory, and the data fields themselves,
+the length of all data (including the Leader that we expect will be added),
+and the size of the Leader and tag directory.
 
 =cut
 
@@ -512,15 +513,21 @@ sub _build_tag_directory() {
 		$dataend += $len;
 	}
 
+	my $baseaddress = 
+		LEADER_LEN +    # better be 24
+		( @directory * DIRECTORY_ENTRY_LEN ) +
+				# all the directory entries
+		1;           	# end-of-field marker
+
+
 	my $total = 
-		LEADER_LEN + 				# Better be 24
-		( @directory * DIRECTORY_ENTRY_LEN ) +	# All the directory entries
-		1 +					# End-of-field marker after directory
-		$dataend + 				# Length of the fields
-		1;					# End-of-record marker
+		$baseaddress +	# stuff before first field
+		$dataend + 	# Length of the fields
+		1;		# End-of-record marker
 
 
-	return (\@fields, \@directory, $total);
+
+	return (\@fields, \@directory, $total, $baseaddress);
 }
 
 =head2 as_usmarc()
@@ -533,9 +540,8 @@ including the leader, directory and all the fields.
 sub as_usmarc() {
 	my $self = shift;
 
-	my ($fields,$directory,$len) = $self->_build_tag_directory();
-
-	$self->_set_record_length($len);
+	my ($fields,$directory,$reclen,$baseaddress) = $self->_build_tag_directory();
+	$self->_set_leader_lengths( $reclen, $baseaddress );
 
 	# Glomp it all together
 	return join("",$self->leader, @$directory, END_OF_FIELD, @$fields, END_OF_RECORD);

@@ -34,7 +34,7 @@ my $marc = MARC::Record->new();
 if ( not $marc ) {
 	error( "Constructor failed: $MARC::Record::ERROR" );
 } else {
-	$marc->leader("00000nam  22002538a 4500");
+	$marc->leader("00000nam  22?????8a 4500"); # The ????? represents meaningless digits at this point
 	my $nfields = $marc->add_fields(
 		["001","fol05865967"],
 		["003","IMchF"],
@@ -70,7 +70,7 @@ if ( not $marc ) {
 	defined($nfields)	or error( "Couldn't add fields to record" );
 	($nfields == 10) 	or error( "Was supposed to add 10 fields, but added $nfields" );
 
-	my $expected = "00397nam  22002538a 4500001001200000003000600012010001600018100001700034245006800051250001200119260004300131650003700174700002300211700001700234\x1Efol05865967\x1EIMchF\x1E  \x1Fa   00055799\x1E1 \x1FaWall, Larry.\x1E10\x1FaProgramming Perl / \x1FcLarry Wall, Tom Christiansen & Jon Orwant.\x1E  \x1Fa3rd ed.\x1E  \x1FaCambridge, Mass. : \x1FbO'Reilly, \x1Fc2000.\x1E 0\x1FaPerl (Computer program language)\x1E1 \x1FaChristiansen, Tom.\x1E1 \x1FaOrwant, Jon.\x1E\x1D";
+	my $expected = "00397nam  22001458a 4500001001200000003000600012010001600018100001700034245006800051250001200119260004300131650003700174700002300211700001700234\x1Efol05865967\x1EIMchF\x1E  \x1Fa   00055799\x1E1 \x1FaWall, Larry.\x1E10\x1FaProgramming Perl / \x1FcLarry Wall, Tom Christiansen & Jon Orwant.\x1E  \x1Fa3rd ed.\x1E  \x1FaCambridge, Mass. : \x1FbO'Reilly, \x1Fc2000.\x1E 0\x1FaPerl (Computer program language)\x1E1 \x1FaChristiansen, Tom.\x1E1 \x1FaOrwant, Jon.\x1E\x1D";
 
 	($marc->as_usmarc eq $expected) or error( "USMARC format not what I expected" );
 } # if constructor
@@ -137,7 +137,7 @@ if ( not open( IN, $filename ) ) {
 judge( "Reading from disk" );
 
 __END__
-LDR 00397nam  22002538a 4500
+LDR 00397nam  22001458a 4500
 001     fol05865967
 003     IMchF
 010    _a   00055799
