@@ -15,11 +15,11 @@ use MARC::Field;
 
 =head1 VERSION
 
-Version 0.12
+Version 0.13
 
 =cut
 
-$VERSION = '0.12';
+$VERSION = '0.13';
 $DEBUG = 0;
 
 use constant SUBFIELD_INDICATOR	=> "\x1F";
@@ -497,7 +497,7 @@ sub as_formatted() {
 		push( @lines, $field->as_formatted() );
 	}
 
-	return join( "\n", @lines );
+	return join( "\n", @lines, "" );
 } # as_formatted
 
 =head2 title()
