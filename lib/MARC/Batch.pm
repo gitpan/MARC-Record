@@ -6,19 +6,19 @@ MARC::Batch - Perl module for handling files of MARC::Record objects
 
 =cut
 
-use 5.6.0;
 use strict;
 use integer;
+eval 'use warnings' if $] >= 5.006;
 
 =head1 VERSION
 
-Version 1.00
+Version 1.10
 
-    $Id: Batch.pm,v 1.8 2002/07/03 20:17:14 petdance Exp $
+    $Id: Batch.pm,v 1.13 2002/08/30 22:43:10 petdance Exp $
 
 =cut
 
-our $VERSION = '1.00';
+use vars '$VERSION'; $VERSION = '1.10';
 
 =head1 SYNOPSIS
 
@@ -112,6 +112,21 @@ sub filename {
 
     return $self->{filename};
 }
+
+=head2 warnings() 
+
+Returns any warnings that have accumulated while processing a particular 
+batch file. As a side effect the warning buffer will be cleared.
+
+=cut
+
+sub warnings {
+    my $self = shift;
+    my $file = $self->{file}; 
+    return(undef) if !$file;
+    return ($file->warnings());
+}
+
 
 1;
 

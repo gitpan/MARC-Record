@@ -1,8 +1,8 @@
 package MARC::Field;
 
-use 5.6.0;
 use strict;
 use integer;
+eval 'use warnings' if $] >= 5.006;
 
 use constant SUBFIELD_INDICATOR => "\x1F";
 use constant END_OF_FIELD       => "\x1E";
@@ -15,13 +15,13 @@ MARC::Field - Perl extension for handling MARC fields
 
 =head1 VERSION
 
-Version 1.00
+Version 1.10
 
-    $Id: Field.pm,v 1.12 2002/07/03 20:17:14 petdance Exp $
+    $Id: Field.pm,v 1.17 2002/08/30 22:43:10 petdance Exp $
 
 =cut
 
-our $VERSION = '1.00';
+use vars '$VERSION'; $VERSION = '1.10';
 
 =head1 SYNOPSIS
 
@@ -137,6 +137,13 @@ and subfields like this:
 The amount of items modified will be returned to you as a result of the
 method call.
 
+If you want to update a field that has no indicators or subfields (000-009)
+just call update() with one argument, the string that you would like to 
+set the field to. 
+
+  $field = $record->field( '003' );
+  $field->update('IMchF');
+
 Note: when doing subfield updates be aware that C<update()> will only 
 update the first occurrence. If you need to do anything more complicated
 you need to create a new field and use C<replace_with()>. 
@@ -146,10 +153,19 @@ you need to create a new field and use C<replace_with()>.
 sub update {
 
   my $self = shift;
+
+  ## tags 000 - 009 don't have indicators or subfields
+  if ( $self->tag() < 10 ) {
+    $self->{_data} = shift;
+    return(1);
+  }
+  
+  ## otherwise we need to update subfields and indicators
   my @data = @{$self->{_subfields}}; 
   my $changes = 0;
 
   while ( @_ ) {
+
     my $arg = shift;
     my $val = shift;
 

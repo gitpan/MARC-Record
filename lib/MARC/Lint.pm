@@ -1,8 +1,8 @@
 package MARC::Lint;
 
-use 5.6.0;
 use strict;
 use integer;
+eval 'use warnings' if $] >= 5.006;
 
 =head1 NAME
 
@@ -10,13 +10,13 @@ MARC::Lint - Perl extension for checking validity of MARC records
 
 =head1 VERSION
 
-Version 1.00
+Version 1.10
 
-    $Id: Lint.pm,v 1.8 2002/07/03 20:17:14 petdance Exp $
+    $Id: Lint.pm,v 1.14 2002/08/30 22:43:10 petdance Exp $
 
 =cut
 
-our $VERSION = '1.00';
+use vars '$VERSION'; $VERSION = '1.10';
 
 use MARC::Record;
 use MARC::Field;
@@ -27,6 +27,7 @@ use MARC::Field;
   use MARC::Lint;
 
   my $linter = new MARC::Lint;
+  my $filename = shift;
 
   open( IN, "<", $filename ) or die "Couldn't open $filename: $!\n";
   binmode( IN ); # for the Windows folks
@@ -159,12 +160,6 @@ Does all sorts of lint-like checks on the MARC record I<marc>, both on the recor
 and on the individual fields & subfields.
 
 =cut
-
-our %control_character = ( 
-    "\t" => "tab",
-    "\n" => "linefeed",
-    "\r" => "carriage return",
-);
 
 sub check_record {
 	my $self = shift;

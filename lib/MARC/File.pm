@@ -6,20 +6,21 @@ MARC::File - Base class for files of MARC records
 
 =cut
 
-use 5.6.0;
 use strict;
 use integer;
-use vars qw( $VERSION $ERROR );
+eval 'use warnings' if $] >= 5.006;
+
+use vars qw( $ERROR );
 
 =head1 VERSION
 
-Version 1.00
+Version 1.10
 
-    $Id: File.pm,v 1.11 2002/07/03 21:33:03 petdance Exp $
+    $Id: File.pm,v 1.18 2002/08/30 22:43:10 petdance Exp $
 
 =cut
 
-our $VERSION = '1.00';
+use vars '$VERSION'; $VERSION = '1.10';
 
 =head1 SYNOPSIS
 
@@ -51,14 +52,20 @@ sub in {
 
     my $self = {
 	filename => $filename,
+	_warnings => [],
     };
 
     bless $self, $class;
 
-    if ( !open( $self->{fh}, "<", $filename ) ) {
+    my $fh = eval { local *FH; open( FH, $filename ) or die; *FH{IO}; };
+
+    if ( $@ ) {
 	undef $self;
-	$MARC::File::ERROR = "Couldn't open $filename: $!";
+	$MARC::File::ERROR = "Couldn't open $filename: $@";
+    } else {
+	$self->{fh} = $fh;
     }
+	
 
     return $self;
 } # new()
@@ -69,19 +76,17 @@ sub out {
 
 =head2 next()
 
-Reads the next record from the file handle passed in.
+Reads the next record from the file handle passed in. 
 
 =cut
 
 sub next {
     my $self = shift;
-
     my $rec = $self->_next();
-
     return $rec ? $self->decode($rec) : undef;
 }
 
-=head2 skip
+=head2 skip()
 
 Skips over the next record in the file.  Same as C<next()>,
 without the overhead of parsing a record you're going to throw away
@@ -97,6 +102,21 @@ sub skip {
     my $rec = $self->_next();
 
     return $rec ? 1 : undef;
+}
+
+=head2 warnings()
+
+Simlilar to MARC::Record and MARC::Batch, warnings() will return any 
+warnings that have accumulated while processing this file; and as a 
+side-effect will clear the warnings buffer.
+
+=cut 
+
+sub warnings {
+    my $self = shift;
+    my @warnings = @{ $self->{_warnings} };
+    $self->{_warnings} = [];
+    return(@warnings);
 }
 
 sub close {
@@ -119,6 +139,14 @@ sub _unimplemented() {
 sub write   { $_[0]->_unimplemented("write"); }
 sub decode  { $_[0]->_unimplemented("decode"); }
 
+# NOTE: _warn must be called as an object method
+
+sub _warn {
+    my ($self,$warning) = @_;
+    push( @{ $self->{_warnings} }, $warning );
+    return(undef);
+}
+
 # NOTE: _gripe can be called as an object method, or not.  Your choice.
 sub _gripe(@) {
     my @parms = @_;
@@ -136,7 +164,7 @@ sub _gripe(@) {
 	warn $ERROR;
     }
 
-    return undef;
+    return(undef);
 }
 
 1;

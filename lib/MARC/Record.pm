@@ -6,29 +6,31 @@ MARC::Record - Perl extension for handling MARC records
 
 =cut
 
-use 5.6.0;
 use strict;
 use integer;
-use vars qw( $VERSION $ERROR );
+eval 'use warnings' if $] >= 5.006;
+
+use vars qw( $ERROR );
 
 use MARC::Field;
 
 =head1 VERSION
 
-Version 1.00
+Version 1.10
 
-    $Id: Record.pm,v 1.23 2002/07/03 20:17:14 petdance Exp $
+    $Id: Record.pm,v 1.29 2002/08/30 22:43:10 petdance Exp $
 
 =cut
 
-our $VERSION = '1.00';
+use vars '$VERSION'; $VERSION = '1.10';
 
 use Exporter;
-our @ISA = qw( Exporter );
-our @EXPORTS = qw();
-our @EXPORT_OK = qw( LEADER_LEN );
+use vars qw( @ISA @EXPORTS @EXPORT_OK );
+@ISA = qw( Exporter );
+@EXPORTS = qw();
+@EXPORT_OK = qw( LEADER_LEN );
 
-our $DEBUG = 0;
+use vars qw( $DEBUG ); $DEBUG = 0;
 
 use constant LEADER_LEN	=> 24;
 
@@ -452,12 +454,16 @@ The warnings are items that you might be interested in, or might
 not.  It depends on how stringently you're checking data.  If
 you're doing some grunt data analysis, you probably don't care.
 
+A side effect of calling warnings() is that the warning buffer will
+be cleared.
+
 =cut
 
 sub warnings() {
     my $self = shift;
-
-    return @{$self->{_warnings}};
+    my @warnings = @{$self->{_warnings}};
+    $self->{_warnings} = []; 
+    return @warnings;
 }
 
 =head2 add_fields()

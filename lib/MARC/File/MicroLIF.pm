@@ -6,23 +6,24 @@ MARC::File::MicroLIF - MicroLIF-specific file handling
 
 =cut
 
-use 5.6.0;
 use strict;
 use integer;
-use vars qw( $VERSION $ERROR );
+eval 'use warnings' if $] >= 5.006;
+
+use vars qw( $ERROR );
 
 =head1 VERSION
 
-Version 1.00
+Version 1.10
 
-    $Id: MicroLIF.pm,v 1.9 2002/07/03 20:17:14 petdance Exp $
+    $Id: MicroLIF.pm,v 1.14 2002/08/30 22:43:10 petdance Exp $
 
 =cut
 
-our $VERSION = '1.00';
+use vars '$VERSION'; $VERSION = '1.10';
 
 use MARC::File;
-our @ISA = qw( MARC::File );
+use vars qw( @ISA ); @ISA = qw( MARC::File );
 
 use MARC::Record qw( LEADER_LEN );
 
