@@ -88,131 +88,6 @@ sub new($) {
 	return $self;
 } # new()
 
-=head2 clone()
-
-Makes a copy of the field.  Note that this is not just the same as saying
-
-    my $newfield = $field;
-
-since that just makes a copy of the reference.  To get a new object, you must
-
-    my $newfield = $field->clone;
-
-Returns a MARC::Field record.
-
-=cut
-
-sub clone {
-    my $self = shift;
-
-    my $tagno = $self->{_tag};
-
-    my $clone = 
-	bless {
-	    _tag => $tagno,
-	    _warnings => [],
-	}, ref($self);
-
-    if ( $self->is_control_tag() ) {
-	$clone->{_data} = $self->{_data};
-    } else {
-	$clone->{_ind1} = $self->{_ind1};
-	$clone->{_ind2} = $self->{_ind2};
-	$clone->{_subfields} = [@{$self->{_subfields}}]; 
-    }
-
-    return $clone;
-}
-
-=head2 update()
-
-Allows you to change the values of the field. You can update indicators
-and subfields like this:
-
-  $field->update( ind2 => '4', a => 'The ballad of Abe Lincoln');
-
-If you want to update a field that has no indicators or subfields (000-009)
-just call update() with one argument, the string that you would like to 
-set the field to. 
-
-  $field = $record->field( '003' );
-  $field->update('IMchF');
-
-Note: when doing subfield updates be aware that C<update()> will only 
-update the first occurrence. If you need to do anything more complicated
-you need to create a new field and use C<replace_with()>. 
-
-Returns the number of items modified.
-
-=cut
-
-sub update {
-
-  my $self = shift;
-
-  ## tags 000 - 009 don't have indicators or subfields
-  if ( $self->is_control_tag() ) {
-    $self->{_data} = shift;
-    return(1);
-  }
-  
-  ## otherwise we need to update subfields and indicators
-  my @data = @{$self->{_subfields}}; 
-  my $changes = 0;
-
-  while ( @_ ) {
-
-    my $arg = shift;
-    my $val = shift;
-
-    ## indicator update
-    if ($arg =~ /^ind[12]$/) {
-      $self->{"_$arg"} = $val;
-      $changes++;
-    }
-    ## subfield update
-    else {
-      for (my $i=0; $i<@data; $i=$i+2) {
-	if ($data[$i] eq $arg) {
-	  $data[$i+1] = $val;
-	  $changes++;
-	  last;
-	}
-      }
-    }
-
-  }
-
-  ## synchronize our subfields 
-  $self->{_subfields} = \@data;
-  return($changes);
-
-}
-
-=head2 replace_with() 
-
-Allows you to replace an existing field with a new one. You need to pass 
-C<replace()> a MARC::Field object to replace the existing field with. For 
-example:
-
-  $field = $record->field('245');
-  my $new_field = new MARC::Field('245','0','4','The ballad of Abe Lincoln.');
-  $field->replace_with($new_field);
-
-Doesn't return a meaningful or reliable value.
-
-=cut 
-
-sub replace_with {
-
-  my ($self,$new) = @_;
-  ref($new) =~ /^MARC::Field$/ 
-    or croak("Must pass a MARC::Field object");
-
-  %$self = %$new;
-    
-}
-
 
 =head2 tag()
 
@@ -249,8 +124,6 @@ sub indicator($) {
 	}
 }
 
-
-
 =head2 subfield(code)
 
 Returns the text from the first subfield matching the subfield code.
@@ -276,7 +149,7 @@ sub subfield {
 		shift @data;
 	}
 
-	return undef;
+	return;
 }
 
 =head2 subfields()
@@ -307,14 +180,6 @@ sub subfields {
 	return @list;
 }
 
-sub _gripe(@) {
-	$ERROR = join( "", @_ );
-
-	warn $ERROR;
-
-	return undef;
-}
-
 =head2 data()
 
 Returns the data part of the field, if the tag number is less than 10.
@@ -336,6 +201,8 @@ sub data($) {
 
 Adds subfields to the end of the subfield list.
 
+    $field->add_subfields( 'c' => '1985' );
+
 Returns the number of subfields added, or C<undef> if there was an error.
 
 =cut
@@ -349,6 +216,116 @@ sub add_subfields(@) {
 	push( @{$self->{_subfields}}, @_ );
 	return @_/2;
 }
+
+
+
+=head2 update()
+
+Allows you to change the values of the field. You can update indicators
+and subfields like this:
+
+  $field->update( ind2 => '4', a => 'The ballad of Abe Lincoln');
+
+If you attempt to update a subfield which does not currently exist in the field,
+then a new subfield will be appended to the field. If you don't like this
+auto-vivification you must check for the existence of the subfield prior to
+update.
+
+  if ( $field->subfield( 'a' ) ) {
+    $field->update( 'a' => 'Cryptonomicon' );
+  }
+
+If you want to update a field that has no indicators or subfields (000-009)
+just call update() with one argument, the string that you would like to 
+set the field to. 
+
+  $field = $record->field( '003' );
+  $field->update('IMchF');
+
+Note: when doing subfield updates be aware that C<update()> will only 
+update the first occurrence. If you need to do anything more complicated
+you will probably need to create a new field and use C<replace_with()>. 
+
+Returns the number of items modified.
+
+=cut
+
+sub update {
+
+  my $self = shift;
+
+  ## tags 000 - 009 don't have indicators or subfields
+  if ( $self->is_control_tag() ) {
+    $self->{_data} = shift;
+    return(1);
+  }
+  
+  ## otherwise we need to update subfields and indicators
+  my @data = @{$self->{_subfields}}; 
+  my $changes = 0;
+
+  while ( @_ ) {
+
+    my $arg = shift;
+    my $val = shift;
+
+    ## indicator update
+    if ($arg =~ /^ind[12]$/) {
+      $self->{"_$arg"} = $val;
+      $changes++;
+    }
+
+    ## subfield update
+    else {
+      my $found = 0;
+      ## update existing subfield
+      for (my $i=0; $i<@data; $i=$i+2) {
+	if ($data[$i] eq $arg) {
+	  $data[$i+1] = $val;
+	  $found = 1;
+	  $changes++;
+	  last;
+	}
+      }
+      ## append new subfield
+      if ( !$found ) { 
+	push( @data, $arg, $val );
+	$changes++;
+      }
+    }
+
+  }
+
+  ## synchronize our subfields 
+  $self->{_subfields} = \@data;
+  return($changes);
+
+}
+
+=head2 replace_with() 
+
+Allows you to replace an existing field with a new one. You need to pass 
+C<replace()> a MARC::Field object to replace the existing field with. For 
+example:
+
+  $field = $record->field('245');
+  my $new_field = new MARC::Field('245','0','4','The ballad of Abe Lincoln.');
+  $field->replace_with($new_field);
+
+Doesn't return a meaningful or reliable value.
+
+=cut 
+
+sub replace_with {
+
+  my ($self,$new) = @_;
+  ref($new) =~ /^MARC::Field$/ 
+    or croak("Must pass a MARC::Field object");
+
+  %$self = %$new;
+    
+}
+
 
 =head2 as_string( [$subfields] )
 
@@ -454,6 +431,41 @@ sub as_usmarc() {
 	}
 }
 
+=head2 clone()
+
+Makes a copy of the field.  Note that this is not just the same as saying
+
+    my $newfield = $field;
+
+since that just makes a copy of the reference.  To get a new object, you must
+
+    my $newfield = $field->clone;
+
+Returns a MARC::Field record.
+
+=cut
+
+sub clone {
+    my $self = shift;
+
+    my $tagno = $self->{_tag};
+
+    my $clone = 
+	bless {
+	    _tag => $tagno,
+	    _warnings => [],
+	}, ref($self);
+
+    if ( $self->is_control_tag() ) {
+	$clone->{_data} = $self->{_data};
+    } else {
+	$clone->{_ind1} = $self->{_ind1};
+	$clone->{_ind2} = $self->{_ind2};
+	$clone->{_subfields} = [@{$self->{_subfields}}]; 
+    }
+
+    return $clone;
+}
 =head2 warnings()
 
 Returns the warnings that were created when the record was read.
@@ -482,6 +494,15 @@ sub is_control_tag {
     my $self = shift;
     return ($self->{_tag} =~ /^\d+$/) && ($self->{_tag} < 10);
 }
+
+sub _gripe(@) {
+	$ERROR = join( "", @_ );
+
+	warn $ERROR;
+
+	return;
+}
+
 
 1;
 
