@@ -1,9 +1,31 @@
 Revision history for Perl extension MARC::Record.
 
+1.31	October 16th, 2003
+	[FIXES]
+	- set_leader_lengths() will now also set other MARC21 leader defaults.
+	  Postitions 10-11, 20-23. For details on the defaults see:
+	  http://www.loc.gov/marc/bibliographic/ecbdldrd.html 
+	- MARC::Batch::next() now accepts a filter function.
+	- Fixed an incorrect instruction in MARC::File::MicroLIF.
+	- marclint actually counts the number of records now.
+
+	[DOCUMENTATION]
+	- Added sample usage for insert_grouped_fields()
+	- Added example about subfield v to x conversion to tutorial.
+	- Documentation fix for MARC::Field::new().
+	- Fixed useage of MARC::Record::append_fields() in example 17
+	  of the Tutorial.
+	- Added TODO test for utf8 handling (utf8.t)
+	- Fixed doc bug in MARC::File::USMARC (#2937)
+
+1.30	There is no 1.30.  We skipped a number.
+
 1.29	June 05, 2003	
 	[ENHANCEMENTS]
-	- MARC::Field::subfield() will return a list of all subfield data when
-	  called in a list context...and only the first when called in a scalar           context. Also added a test 67.subfield.t to test new functionality. 
+	- MARC::Field::subfield() will return a list of all subfield
+	  data when called in a list context...and only the first when
+	  called in a scalar context. Also added a test 67.subfield.t
+	  to test new functionality.
 
 1.28	May 23, 2003
 	[FIXES]

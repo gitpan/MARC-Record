@@ -14,14 +14,14 @@ use vars qw( $ERROR );
 use MARC::Field;
 use Carp qw(croak);
 
-=head1 VERSION 1.29
+=head1 VERSION 1.31
 
-    $Id: Record.pm,v 1.63 2003/06/05 18:51:53 edsummers Exp $
+    $Id: Record.pm,v 1.65 2003/10/16 15:59:42 edsummers Exp $
 
 =cut
 
 use vars qw( $VERSION );
-$VERSION = '1.29';
+$VERSION = '1.31';
 
 use Exporter;
 use vars qw( @ISA @EXPORTS @EXPORT_OK );
@@ -253,7 +253,10 @@ want. If you would like to insert at a specific point in the record you can use
 insert_fields_after() and insert_fields_before() methods which are described 
 below. 
 
-=cut 
+    my $field = MARC::Field->new( '510', 'Indexed by Google.' );
+    $record->insert_grouped_field( $field );
+
+=cut
 
 sub insert_grouped_field {
     my ($self,$new) = @_;
@@ -474,6 +477,9 @@ sub set_leader_lengths {
     my $baseaddr = shift;
     substr($self->{_leader},0,5)  = sprintf("%05d",$reclen);
     substr($self->{_leader},12,5) = sprintf("%05d",$baseaddr);
+    # MARC21 defaults: http://www.loc.gov/marc/bibliographic/ecbdldrd.html
+    substr($self->{_leader},10,2) = '22';
+    substr($self->{_leader},20,4) = '4500';
 }
 
 =head2 clone()
