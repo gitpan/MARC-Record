@@ -15,13 +15,13 @@ MARC::Field - Perl extension for handling MARC fields
 
 =head1 VERSION
 
-Version 0.93
+Version 0.94
 
-    $Id: Field.pm,v 1.9 2002/05/22 03:32:56 petdance Exp $
+    $Id: Field.pm,v 1.11 2002/06/11 18:45:17 petdance Exp $
 
 =cut
 
-our $VERSION = '0.93';
+our $VERSION = '0.94';
 
 =head1 SYNOPSIS
 
@@ -184,7 +184,7 @@ C<replace()> a MARC::Field object to replace the existing field with. For
 example:
 
   $field = $record->field('245');
-  my $new_field = CTAH::Field('245','0','4','The ballad of Abe Lincoln.');
+  my $new_field = new MARC::Field('245','0','4','The ballad of Abe Lincoln.');
   $field->replace_with($new_field);
 
 =cut 

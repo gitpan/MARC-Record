@@ -14,9 +14,8 @@ use warnings;
 use strict;
 use integer;
 
-use lib qw( /home/alester/marc-record/lib );
-
 use MARC::File;
+use MARC::Record;
 use Getopt::Long;
 
 my $opt_print = 1;
@@ -33,6 +32,7 @@ my $rc =
 	"quiet"	    => \$opt_quiet,
 	"stats!"    => \$opt_stats,
 	"field=s"   => \@opt_field,
+	"debug!"    => \$MARC::Record::DEBUG,
 	"help"	    => \$opt_help,
 	);
 
