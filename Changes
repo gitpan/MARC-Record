@@ -1,5 +1,9 @@
 Revision history for Perl extension MARC::Record.
 
+0.12	November 13, 2001
+	- new_from_microlif() now allows underscores that are embedded in a
+	  subfield, and ignores any HDR line that gets passed to it.
+
 0.11	November 12, 2001
 	- Added inbound microlif support.
 	- Added lif2marc program.

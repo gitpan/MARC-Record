@@ -15,11 +15,11 @@ use MARC::Field;
 
 =head1 VERSION
 
-Version 0.11
+Version 0.12
 
 =cut
 
-$VERSION = '0.11';
+$VERSION = '0.12';
 $DEBUG = 0;
 
 use constant SUBFIELD_INDICATOR	=> "\x1F";
@@ -195,6 +195,9 @@ sub new_from_microlif($) {
 
 	my @lines = split( /\n/, $text );
 	for my $line ( @lines ) {
+		# Ignore the file header if the calling program hasn't already dealt with it
+		next if $line =~ /^HDR/;
+
 		($line =~ s/^(\d\d\d|LDR)//) or
 			return _gripe( "Invalid tag number: ", substr( $line, 0, 3 ) );
 		my $tagno = $1;
@@ -210,7 +213,7 @@ sub new_from_microlif($) {
 			$line =~ s/^(.)(.)//;
 			my ($ind1,$ind2) = ($1,$2);
 			my @subfields;
-			my @subfield_data_pairs = split( /_/, $line );
+			my @subfield_data_pairs = split( /_(?=[a-z0-9])/, $line );
 			shift @subfield_data_pairs; # Leading _ makes an empty pair
 			for my $pair ( @subfield_data_pairs ) {
 				my ($subfield,$data) = (substr( $pair, 0, 1 ), substr( $pair, 1 ));
