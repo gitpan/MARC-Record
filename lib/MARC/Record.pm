@@ -15,11 +15,11 @@ use MARC::Field;
 
 =head1 VERSION
 
-Version 0.13
+Version 0.14
 
 =cut
 
-$VERSION = '0.13';
+$VERSION = '0.14';
 $DEBUG = 0;
 
 use constant SUBFIELD_INDICATOR	=> "\x1F";
@@ -226,6 +226,23 @@ sub new_from_microlif($) {
 	return $self;
 }
 
+sub _next_from_file {
+	my $fh = shift;
+
+	my $reclen;
+
+	read( $fh, $reclen, 5 )
+		or return _gripe( "Error reading record length: $!" );
+
+	$reclen =~ /^\d{5}$/
+		or return _gripe( "Invalid record length \"$reclen\"" );
+	my $usmarc = $reclen;
+	read( $fh, substr($usmarc,5), $reclen-5 )
+		or return _gripe( "Error reading $reclen byte record: $!" );
+
+	return $usmarc;
+}
+
 =head2 next_from_file(*FILEHANDLE)
 
 Reads the next record from the file handle passed in.
@@ -241,19 +258,30 @@ Reads the next record from the file handle passed in.
 sub next_from_file(*) {
 	my $fh = shift;
 
-	my $reclen;
-	my $usmarc;
+	my $usmarc = _next_from_file($fh);
 
-	read( $fh, $reclen, 5 )
-		or return _gripe( "Error reading record length: $!" );
+	return $usmarc ? MARC::Record->new_from_usmarc($usmarc) : undef;
+}
 
-	$reclen =~ /^\d{5}$/
-		or return _gripe( "Invalid record length \"$reclen\"" );
-	$usmarc = $reclen;
-	read( $fh, substr($usmarc,5), $reclen-5 )
-		or return _gripe( "Error reading $reclen byte record: $!" );
+=head2 skip_from_file(*FILEHANDLE)
 
-	return MARC::Record->new_from_usmarc($usmarc);
+Skips over the next record in the file.  Same as C<next_from_file()>,
+without the overhead of parsing a record you're going to throw away
+anyway.
+
+This is preferable to manipulating the filehandle directly because you
+still get the benefit of validating the record that's getting skipped.
+
+Returns 1 or undef.
+
+=cut
+
+sub skip_from_file(*) {
+	my $fh = shift;
+
+	my $usmarc = _next_from_file($fh);
+
+	return $usmarc ? 1 : undef;
 }
 
 =head2 leader([text])
@@ -297,7 +325,7 @@ sub update_leader() {
 	$self->_set_leader_lengths( $reclen, $baseaddress );
 }
 
-=head2 _set_leader_lengths($$) 
+=pod
 
 Internal function for updating the leader's length and base address.
 
@@ -314,7 +342,7 @@ sub _set_leader_lengths($$) {
 
 =head2 add_fields()
 
-Adds MARC::Field objects to the end of the list.  Returns the number
+Adds C<MARC::Field> objects to the end of the list.  Returns the number
 of fields added, or C<undef> if there was an error.
 
 There are three ways of calling C<add_fields()> to add data to the record.
@@ -497,7 +525,7 @@ sub as_formatted() {
 		push( @lines, $field->as_formatted() );
 	}
 
-	return join( "\n", @lines, "" );
+	return join( "\n", @lines );
 } # as_formatted
 
 =head2 title()
@@ -670,6 +698,10 @@ decide if C<MARC::Record> is for you.
 
 =back
 
+=head1 RELATED MODULES
+
+L<MARC::Record>, L<MARC::Lint>
+
 =head1 SEE ALSO
 
 =over 4
@@ -677,7 +709,6 @@ decide if C<MARC::Record> is for you.
 =item * perl4lib (L<http://www.rice.edu/perl4lib/>)
 
 A mailing list devoted to the use of Perl in libraries.
-
 
 =item * Library Of Congress MARC pages (L<http://www.loc.gov/marc/>)
 

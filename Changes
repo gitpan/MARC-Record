@@ -1,10 +1,12 @@
 Revision history for Perl extension MARC::Record.
 
+0.14	Marc 7, 2002
+	- Added skip_from_file() to read and ignore a record.  It's the
+	same as next_from_file(), without the overhead of the parsing.
+
 0.13    November 18, 2001
-        - MARC::Lint now squawks if there are inappropriate control 
-	  characters in the data.  Thanks to Kit baum for the idea.
-	- MARC::Record::as_formatted() now puts a final carriage return
-	  at the end of itself.
+	- MARC::Lint now squawks if there are inappropriate control
+	  characters in the data.
 
 0.12	November 13, 2001
 	- new_from_microlif() now allows underscores that are embedded in a

@@ -147,33 +147,18 @@ sub warn {
 	return undef;
 }
 
-=head2 C<_invalid_char_warning(str)>
-
-Internal function to find invalid characters, and make a nice pretty warning.
-
-=cut
-
-sub _invalid_char_warning {
-	my $self = shift;
-	my $str = shift;
-
-	my $nbad = ($str =~ tr/\x00-\x1F//); # Just counts, doesn't replace
-        if ( $nbad ) {
-		my $s = ($nbad == 1) ? "" : "s";
-		return "$nbad invalid control character$s";
-	} else {
-		return "";
-	}
-}
-
-
-
 =head2 C<check_record(marc)>
 
 Does all sorts of lint-like checks on the MARC record I<marc>, both on the record as a whole,
 and on the individual fields & subfields.
 
 =cut
+
+our %control_character = ( 
+    "\t" => "tab",
+    "\n" => "linefeed",
+    "\r" => "carriage return",
+);
 
 sub check_record {
 	my $self = shift;
@@ -183,11 +168,6 @@ sub check_record {
 
 	(ref($marc) eq "MARC::Record")
 		or return $self->warn( "Must pass a MARC::Record object to check_record" );
-
-	my $warning = $self->_invalid_char_warning( $marc->leader );
-	if ( $warning ) {
-		$self->warn( "Leader contains $warning" );
-	}
 
 	if ( (my @_1xx = $marc->field( "1XX" )) > 1 ) {
 		$self->warn( "1XX: Only one 1XX tag is allowed, but I found ", scalar @_1xx, " of them." );
@@ -202,21 +182,16 @@ sub check_record {
 	my $rules = $self->{_rules};
 	for my $field ( $marc->fields ) {
 		my $tagno = $field->tag;
-		my $tagrules = $rules->{$tagno};
+		my $tagrules = $rules->{$tagno} or next;
 
-		if ( $tagrules && $tagrules->{NR} && $field_seen{$tagno} ) { 
+		if ( $tagrules->{NR} && $field_seen{$tagno} ) { 
 			$self->warn( "$tagno: Field is not repeatable." );
 		}
 
-		if ( $tagno < 10 ) {
-			my $warning = $self->_invalid_char_warning($field->data);
-                        if ( $warning ) {
-				$self->warn( "$tagno: Contains $warning" );
-			}
-		} else {
+		if ( $tagno >= 10 ) {
 			for my $ind ( 1..2 ) {
 				my $indvalue = $field->indicator($ind);
-				if ( $tagrules && not ($indvalue =~ $tagrules->{"ind$ind" . "_regex"}) ) {
+				if ( not ($indvalue =~ $tagrules->{"ind$ind" . "_regex"}) ) {
 					$self->warn( 
 						"$tagno: Indicator $ind must be ", 
 						$tagrules->{"ind$ind" . "_desc"}, 
@@ -229,22 +204,20 @@ sub check_record {
 			for my $subfield ( $field->subfields ) {
 				my ($code,$data) = @$subfield;
 
-				my $warning = $self->_invalid_char_warning($data);
-				if ( $warning ) {
-					$self->warn( "$tagno: Subfield _$code contains $warning" );
+				my $rule = $tagrules->{$code};
+				if ( not defined $rule ) {
+					$self->warn( "$tagno: Subfield _$code is not allowed." );
+				} elsif ( ($rule eq "NR") && $sub_seen{$code} ) {
+					$self->warn( "$tagno: Subfield _$code is not repeatable." );
 				}
 
-				if ( $tagrules ) {
-					my $rule = $tagrules->{$code};
-					if ( not defined $rule ) {
-						$self->warn( "$tagno: Subfield _$code is not allowed." );
-					} elsif ( ($rule eq "NR") && $sub_seen{$code} ) {
-						$self->warn( "$tagno: Subfield _$code is not repeatable." );
-					}
+				if ( $data =~ /[\t\r\n]/ ) {
+					$self->warn( "$tagno: Subfield _$code has an invalid control character" );
 				}
+
 				++$sub_seen{$code};
-			} # for $subfield
-		} # $tagno >= 10
+			}
+		}
 
 		# Check to see if a check_xxx() function exists, and call it on the field if it does
 		my $checker = "check_$tagno";
