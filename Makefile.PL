@@ -19,7 +19,7 @@ sub filecheck {
 	PMLIBDIRS	=> [ qw( lib/ ) ],
 	AUTHOR		=> 'Andy Lester <andy@petdance.com>',
 	PREREQ_PM	=> {},
-	EXE_FILES	=> [ qw( pl/marcdump pl/marclint ) ],
+	EXE_FILES	=> [ qw( pl/marcdump pl/marclint pl/lif2marc ) ],
 	dist 		=> {
 				COMPRESS => 'gzip -9f', 
 				SUFFIX => 'gz',

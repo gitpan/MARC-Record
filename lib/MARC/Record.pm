@@ -15,11 +15,11 @@ use MARC::Field;
 
 =head1 VERSION
 
-Version 0.10
+Version 0.11
 
 =cut
 
-$VERSION = '0.10';
+$VERSION = '0.11';
 $DEBUG = 0;
 
 use constant SUBFIELD_INDICATOR	=> "\x1F";
@@ -89,7 +89,7 @@ sub new($) {
 =head2 new_from_usmarc()
 
 Constructor for handling data from a USMARC file.  This function takes care of all
-the directory parsing & mangling.
+the tag directory parsing & mangling.
 
 Any warnings or coercions can be checked in the C<warnings()> function.
 
@@ -173,6 +173,52 @@ sub new_from_usmarc($) {
 	# Once we're done, there shouldn't be any fields left over: They should all have shifted off.
 	(@fields == 0)
 		or return _gripe( "I've got leftover fields that weren't in the directory" );
+
+	return $self;
+}
+
+=head2 new_from_microlif()
+
+Constructor for handling data from a microlif file.  This function takes care of all
+the directory parsing & mangling.
+
+Any warnings or coercions can be checked in the C<warnings()> function.
+
+Note that we are NOT expecting to get the trailing "`" mark at the end of the last line.
+
+=cut
+
+sub new_from_microlif($) {
+	my $class = shift;
+	my $text = shift;
+	my $self = new($class);
+
+	my @lines = split( /\n/, $text );
+	for my $line ( @lines ) {
+		($line =~ s/^(\d\d\d|LDR)//) or
+			return _gripe( "Invalid tag number: ", substr( $line, 0, 3 ) );
+		my $tagno = $1;
+
+		($line =~ s/\^$//) or
+			$self->_warn( "Tag $tagno is missing a trailing caret." );
+
+		if ( $tagno eq "LDR" ) {
+			$self->leader( substr( $line, 0, LEADER_LEN ) );
+		} elsif ( $tagno < 10 ) {
+			$self->add_fields( $tagno, $line );
+		} else {
+			$line =~ s/^(.)(.)//;
+			my ($ind1,$ind2) = ($1,$2);
+			my @subfields;
+			my @subfield_data_pairs = split( /_/, $line );
+			shift @subfield_data_pairs; # Leading _ makes an empty pair
+			for my $pair ( @subfield_data_pairs ) {
+				my ($subfield,$data) = (substr( $pair, 0, 1 ), substr( $pair, 1 ));
+				push( @subfields, $subfield, $data );
+			}
+			$self->add_fields( $tagno, $ind1, $ind2, @subfields );
+		}
+	} # for
 
 	return $self;
 }
@@ -685,11 +731,6 @@ Imagine something like this:
 Ideas are things that have been considered, but nobody's actually asked for.
 
 =over 4
-
-=item * Read from MicroLIF
-
-Create a C<new_from_microlif()> function that would handle the pretty 
-MicroLIF format.  Basically, a reverse of C<as_microlif()>.
 
 =item * Create multiple output formats.
 

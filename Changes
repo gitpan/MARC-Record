@@ -1,5 +1,9 @@
 Revision history for Perl extension MARC::Record.
 
+0.11	November 12, 2001
+	- Added inbound microlif support.
+	- Added lif2marc program.
+
 0.10	September 27, 2001
 	- Correctly updates the base address in the leader.  Thanks to
 	Tim Wentz (twentz@mc.net) for finding & fixing.
