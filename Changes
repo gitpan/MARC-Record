@@ -1,6 +1,11 @@
 Revision history for Perl extension MARC::Record.
 
-0.08	May 23, 2001
+0.09	August 9, 2001
+	- Updated rules from "Understanding MARC" book.
+	- Added delete_field() method.
+
+0.08	May 25, 2001
+	- Added MARC::Record::title and ::author methods
 	- Added the marclint program.
 	- Added the rest of the rules for the 5XX tags forward.
 	- Made the modules compatible with Perl 5.004.  The exception

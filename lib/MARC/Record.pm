@@ -9,17 +9,18 @@ MARC::Record - Perl extension for handling MARC records
 use 5.004;
 use strict;
 use integer;
-use vars qw( $VERSION $ERROR );
+use vars qw( $VERSION $ERROR $DEBUG );
 
 use MARC::Field;
 
 =head1 VERSION
 
-Version 0.08
+Version 0.09
 
 =cut
 
-$VERSION = '0.08';
+$VERSION = '0.09';
+$DEBUG = 0;
 
 use constant SUBFIELD_INDICATOR	=> "\x1F";
 use constant END_OF_FIELD	=> "\x1E";
@@ -332,6 +333,34 @@ sub add_fields(@) {
 
 	return $nfields;
 }
+
+=head2 delete_field(C<$field>)
+
+Deletes a field from the record.
+
+The field must have been retrieved from the record using the 
+C<field()> method.  For example, to delete a 526 tag if it exists:
+
+    my $tag526 = $marc->field( "526" );
+    if ( $tag526 ) {
+	$marc->delete_field( $tag526 );
+    }
+
+C<delete_field()> returns the number of fields that were deleted.
+This shouldn't be 0 unless you didn't get the tag properly.
+
+=cut
+
+sub delete_field($) {
+	my $self = shift;
+	my $deleter = shift;
+	my $list = $self->{_fields};
+
+	my $old_count = @$list;
+	@$list = grep { $_ != $deleter } @$list;
+	return $old_count - @$list;
+}
+
 
 =head2 fields()
 

@@ -200,7 +200,7 @@ sub check_record {
 
 				my $rule = $tagrules->{$code};
 				if ( not defined $rule ) {
-					$self->warn( "$tagno: Subfield _$code is not valid." );
+					$self->warn( "$tagno: Subfield _$code is not allowed." );
 				} elsif ( ($rule eq "NR") && $sub_seen{$code} ) {
 					$self->warn( "$tagno: Subfield _$code is not repeatable." );
 				}

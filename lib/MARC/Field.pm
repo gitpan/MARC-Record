@@ -74,7 +74,7 @@ sub new($) {
 		} # for
 		
 		(@_ >= 2)
-			or return _gripe( "Must pass at least one subfield" );
+			or return _gripe( "Field $tagno must have at least one subfield" );
 
 		# Normally, we go thru add_subfields(), but internally we can cheat
 		$self->{_subfields} = [@_];

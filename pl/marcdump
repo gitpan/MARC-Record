@@ -41,6 +41,7 @@ use warnings;
 use strict;
 use integer;
 
+use lib qw( /home/alester/marc/lib );
 use MARC::Record;
 use Getopt::Long;
 
@@ -94,12 +95,12 @@ for my $IN ( @files ) {
 	while ( !eof(IN) ) {
 		++$counts{$IN};
 		warn "$counts{$IN} records\n" if ( !$quiet && ($counts{$IN} % 1000 == 0) );
-		my $marc = MARC::Record::next_from_file( *IN );
-		if ( $marc ) {
-			print $marc->as_formatted, "\n\n" if $print;
-		} else {
-			warn $MARC::Record::ERROR;
+		my $marc = MARC::Record::next_from_file( *IN ) or die $MARC::Record::ERROR;
+
+		print $marc->as_formatted, "\n\n" if $print;
+		if ( $marc->warnings() ) {
 			++$errors{$IN};
+			print join( "\n", $marc->warnings(), "" );
 		}
 	} # while
 	close IN;

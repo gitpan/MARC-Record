@@ -32,6 +32,7 @@ use warnings;
 use strict;
 use integer;
 
+use lib qw( /home/alester/marc/lib );
 use MARC::Record;
 use MARC::Lint;
 use Getopt::Long;
