@@ -8,8 +8,6 @@ MARC::File::MicroLIF - MicroLIF-specific file handling
 
 use strict;
 use integer;
-eval 'use warnings' if $] >= 5.006;
-
 use vars qw( $ERROR );
 
 use MARC::File;

@@ -1,10 +1,9 @@
 package MARC::Field;
 
+use warnings;
 use strict;
 use integer;
 use Carp;
-
-eval 'use warnings' if $] >= 5.006;
 
 use constant SUBFIELD_INDICATOR => "\x1F";
 use constant END_OF_FIELD       => "\x1E";
@@ -354,12 +353,26 @@ sub add_subfields(@) {
 
 =head2 as_string( [$subfields] )
 
-Returns a string of all subfields run together, without the tag number.
+Returns a string of all subfields run together.  A space is added to
+the result between each subfield.  The tag number and subfield 
+character are not included.
+
+Subfields appear in the output string in the order in which they
+occur in the field. 
 
 If C<$subfields> is specified, then only those subfields will be included.
 
-    my $field = $marc->field( '245' );
-    print $field->as_string( 'anp' ); # Only those three subfields
+  my $field = MARC::Field->new( 
+		245, '1', '0',
+			'a' => 'Abraham Lincoln',
+			'h' => '[videorecording] :',
+			'b' => 'preserving the union /',
+			'c' => 'A&E Home Video.'
+		);
+  print $field->as_string( 'abh' ); # Only those three subfields
+  # prints 'Abraham Lincoln [videorecording] : preserving the union /'.
+
+Note that subfield h comes before subfield b in the output.
 
 =cut
 

@@ -8,8 +8,6 @@ MARC::File::USMARC - USMARC-specific file handling
 
 use strict;
 use integer;
-eval 'use bytes'    if $] >= 5.006;
-eval 'use warnings' if $] >= 5.006;
 
 use vars qw( $ERROR );
 
@@ -51,6 +49,10 @@ sub _next {
 
     local $/ = END_OF_RECORD;
     my $usmarc = <$fh>;
+
+    # remove illegal garbage that sometimes occurs between records
+    $usmarc =~ s/^[ \x00\x0a\x0d]+//;
+
     return undef if ! $usmarc;
 
     if ( length($usmarc) < 5 ) {
