@@ -17,13 +17,13 @@ use Carp qw(croak);
 
 =head1 VERSION
 
-Version 1.16
+Version 1.17
 
-    $Id: Record.pm,v 1.42 2003/01/28 21:41:37 petdance Exp $
+    $Id: Record.pm,v 1.48 2003/01/30 03:25:45 petdance Exp $
 
 =cut
 
-use vars '$VERSION'; $VERSION = '1.16';
+use vars '$VERSION'; $VERSION = '1.17';
 
 use Exporter;
 use vars qw( @ISA @EXPORTS @EXPORT_OK );
@@ -70,10 +70,12 @@ sub new {
     return bless $self, $class;
 } # new()
 
-=head2 new_from_usmarc( $marcblob )
+=head2 new_from_usmarc( $marcblob [, \&filter_func($tagno,$tagdata)] )
 
 This is a wrapper around C<MARC::File::USMARC::decode()> for compatibility with
 older versions of MARC::Record.
+
+The C<wanted_func()> is optional.  See L<MARC::File::USMARC>::decode for details.
 
 =cut
 
@@ -83,7 +85,7 @@ sub new_from_usmarc {
 
     require MARC::File::USMARC;
 
-    return MARC::File::USMARC::decode( $blob );
+    return MARC::File::USMARC::decode( $blob, @_ );
 }
 
 =head1 COMMON FIELD RETRIEVAL METHODS
@@ -115,15 +117,20 @@ sub title() {
 
 =head2 title_proper()
 
-Returns the title proper from the 245 tag, subfield a.
+Returns the title proper from the 245 tag, subfields a, n and p.
 
 =cut
 
 sub title_proper() {
     my $self = shift;
 
-    my $str = $self->subfield(245,'a');
-    return defined $str ? $str : "";
+    my $field = $self->field(245);
+
+    if ( $field ) {
+	return $field->as_string('anp');
+    } else {
+	return "";
+    }
 }
 
 =head2 author()
@@ -136,7 +143,7 @@ sub author() {
     my $self = shift;
 
     my $field = $self->field('100|110|111');
-    return $field ? $field->as_string() : "";
+    return $field ? $field->as_string : "";
 }
 
 =head2 edition()

@@ -15,13 +15,13 @@ use vars qw( $ERROR );
 
 =head1 VERSION
 
-Version 1.16
+Version 1.17
 
-    $Id: USMARC.pm,v 1.34 2003/01/28 21:41:40 petdance Exp $
+    $Id: USMARC.pm,v 1.37 2003/01/29 18:16:09 petdance Exp $
 
 =cut
 
-use vars '$VERSION'; $VERSION = '1.16';
+use vars '$VERSION'; $VERSION = '1.17';
 
 use MARC::File;
 use vars qw( @ISA ); @ISA = qw( MARC::File );
@@ -80,18 +80,44 @@ sub _next {
     return $usmarc;
 }
 
-=head2 decode()
+=head2 decode( $string [, \&filter_func ] )
 
 Constructor for handling data from a USMARC file.  This function takes care of 
 all the tag directory parsing & mangling.
 
 Any warnings or coercions can be checked in the C<warnings()> function.
 
+The C<$filter_func> is an optional reference to a user-supplied function
+that determines on a tag-by-tag basis if you want the tag passed to it
+to be put into the MARC record.  The function is passed the tag number
+and the raw tag data, and must return a boolean.  The return of a true
+value tells MARC::File::USMARC::decode that the tag should get put into
+the resulting MARC record.
+
+For example, if you only want title and subject tags in your MARC record,
+try this:
+
+    sub filter {
+	my ($tagno,$tagdata) = @_;
+
+	return ($tagno == 245) || ($tagno >= 600 && $tagno <= 699);
+    }
+
+    my $marc = MARC::File::USMARC->decode( $string, \&filter );
+
+Why would you want to do such a thing?  The big reason is that creating
+fields is processor-intensive, and if your program is doing read-only
+data analysis and needs to be as fast as possible, you can save time by
+not creating fields that you'll be ignoring anyway.
+
+Another possible use is if you're only interested in printing certain
+tags from the record, then you can filter them when you read from disc
+and not have to delete unwanted tags yourself.
+
 =cut
 
 sub decode {
 
-    my $self = shift;
     my $text;
     my $location = '';
 
@@ -101,6 +127,7 @@ sub decode {
     ## MARC::File::USMARC::decode( $string )
     ## this bit of code covers all three
  
+    my $self = shift;
     if ( ref($self) =~ /^MARC::File/ ) {
 	$location = 'in record '.$self->{recnum};
 	$text = shift;
@@ -108,6 +135,8 @@ sub decode {
 	$location = 'in record 1';
 	$text = $self=~/MARC::File/ ? shift : $self;
     }
+
+    my $filter_func = shift;
 
     my $marc = MARC::Record->new();
 
@@ -155,7 +184,11 @@ sub decode {
 	    or $marc->_warn( "Directory offsets $location are out of whack for tag $tagno" );
 	$databytesused += $len;
 
-	if ( _isnum($tagno) and $tagno < 10 ) {
+	if ( $filter_func ) {
+	    next unless $filter_func->( $tagno, $tagdata );
+	}
+
+	if ( ($tagno =~ /^\d+$/) && ($tagno < 10) ) {
 	    if ( ! defined( $tagdata ) ) {
 		$marc->_warn( "Did not find tag data $location for tag $tagno" );
 		next;
@@ -281,12 +314,6 @@ sub encode() {
 
     # Glomp it all together
     return join("",$marc->leader, @$directory, END_OF_FIELD, @$fields, END_OF_RECORD);
-}
-
-sub _isnum {
-    my $x = shift;
-    return(1) if $x =~ /^[0-9]+$/;
-    return(0);
 }
 
 1;
