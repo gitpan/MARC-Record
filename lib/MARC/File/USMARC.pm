@@ -13,13 +13,13 @@ use vars qw( $VERSION $ERROR );
 
 =head1 VERSION
 
-Version 0.94
+Version 1.00
 
-    $Id: USMARC.pm,v 1.11 2002/06/11 18:45:17 petdance Exp $
+    $Id: USMARC.pm,v 1.14 2002/07/03 21:53:54 petdance Exp $
 
 =cut
 
-our $VERSION = '0.94';
+our $VERSION = '1.00';
 
 use MARC::File;
 our @ISA = qw( MARC::File );
@@ -61,6 +61,7 @@ sub _next {
 
     my $reclen;
 
+    return undef if eof($fh);
     read( $fh, $reclen, 5 )
 	or return $self->_gripe( "Error reading record length: $!" );
 
@@ -98,7 +99,7 @@ sub decode {
 
     $marc->leader( substr( $text, 0, LEADER_LEN ) );
     my @fields = split( END_OF_FIELD, substr( $text, LEADER_LEN ) );
-    my $dir = shift @fields or return _gripe( "No directory found" );
+    my $dir = shift @fields or return $marc->_gripe( "No directory found" );
 
     (length($dir) % 12 == 0)
 	or return $marc->_gripe( "Invalid directory length" );

@@ -1,9 +1,10 @@
 #!/usr/bin/perl -w
+# $Id: 50.batch.t,v 1.4 2002/07/02 04:03:44 petdance Exp $
 
 use strict;
 use integer;
 
-use Test::More tests=>6;
+use Test::More tests=>136;
 
 BEGIN {
     use_ok( 'MARC::Batch' );
@@ -14,10 +15,11 @@ BEGIN {
 # Test the USMARC stuff
 USMARC: {
     my $batch = new MARC::Batch( 'MARC::File::USMARC', 't/camel.usmarc' );
-    ok( defined $batch, 'Batch created OK' );
+    isa_ok( $batch, 'MARC::Batch', 'MARC batch' );
 
     my $n = 0;
     while ( my $marc = $batch->next() ) {
+	isa_ok( $marc, 'MARC::Record' );
 	++$n;
     }
     is( $n, 10, 'Got 10 USMARC records' );
@@ -30,10 +32,11 @@ MicroLIF: {
     is( scalar @files, 2, 'Only have 2 sample*.lif files' );
 
     my $batch = new MARC::Batch( 'MicroLIF', @files );
-    ok( defined $batch, 'Batch created OK' );
+    isa_ok( $batch, 'MARC::Batch', 'MicroLIF batch' );
 
     my $n = 0;
     while ( my $marc = $batch->next() ) {
+	isa_ok( $marc, 'MARC::Record' );
 	++$n;
     }
     is( $n, 120, 'Got 120 LIF records' );

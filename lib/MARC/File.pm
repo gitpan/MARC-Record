@@ -13,13 +13,13 @@ use vars qw( $VERSION $ERROR );
 
 =head1 VERSION
 
-Version 0.94
+Version 1.00
 
-    $Id: File.pm,v 1.9 2002/06/11 18:45:17 petdance Exp $
+    $Id: File.pm,v 1.11 2002/07/03 21:33:03 petdance Exp $
 
 =cut
 
-our $VERSION = '0.94';
+our $VERSION = '1.00';
 
 =head1 SYNOPSIS
 
@@ -104,6 +104,7 @@ sub close {
 
     close( $self->{fh} );
     delete $self->{fh};
+    delete $self->{filename};
 
     return;
 }
@@ -120,9 +121,19 @@ sub decode  { $_[0]->_unimplemented("decode"); }
 
 # NOTE: _gripe can be called as an object method, or not.  Your choice.
 sub _gripe(@) {
-    if ( @_ ) {
-	shift if ref($_[0]) =~ /^MARC::File/;	# Skip first parm if it's a $self
-	$ERROR = join( "", @_ );
+    my @parms = @_;
+    if ( @parms ) {
+	my $self = shift @parms;
+
+	if ( ref($self) =~ /^MARC::File/ ) {
+	    push( @parms, " at byte ", tell($self->{fh}) ) if $self->{fh};
+	    push( @parms, " in file ", $self->{filename} ) if $self->{filename};
+	} else {
+	    unshift( @parms, $self );
+	}
+
+	$ERROR = join( "", @parms );
+	warn $ERROR;
     }
 
     return undef;

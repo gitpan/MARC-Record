@@ -1,11 +1,12 @@
-# camel.t - Test creating a MARC record for the Camel book
+# $Id: 10.camel.t,v 1.10 2002/07/02 04:14:28 petdance Exp $
+# Test creating a MARC record for the Camel book
 #
 # Bugs, comments, suggestions welcome: marc@petdance.com
 
 use strict;
 use integer;
 
-use Test::More tests => 28;
+use Test::More tests => 27;
 
 BEGIN {
     use_ok( 'MARC::Record' );
@@ -16,8 +17,7 @@ pass( 'Loaded modules' );
 
 # Test 1: Testing as_usmarc()
 my $marc = MARC::Record->new();
-ok( defined $marc,		'Constructor returned' );
-is( ref $marc, 'MARC::Record',	'   and type is correct' );
+isa_ok( $marc, 'MARC::Record', 'MARC record' );
 
 $marc->leader("00000nam  22?????8a 4500"); # The ????? represents meaningless digits at this point
 my $nfields = $marc->add_fields(
@@ -61,7 +61,7 @@ is( MARC::File::USMARC->encode( $marc ), $expected,  'encode()' );
 is( $marc->as_usmarc(), $expected,  'as_usmarc()' );
 
 my $marc_from_blob = MARC::Record->new_from_usmarc( $expected );
-ok( defined $marc_from_blob, 'Imported from a blob' );
+isa_ok( $marc_from_blob, 'MARC::Record', 'MARC record imported from a blob' );
 is( $marc->as_usmarc(), $expected,  'MARC from blob encodes correctly' ); 
 
 # Test 2: as_string()
@@ -91,12 +91,12 @@ is( $marc->subfield( 100, "a" ), "Wall, Larry.", 'Field/subfield lookup' );
 # Test 6: Reading from disk
 
 my $file = MARC::File::USMARC->in( "t/camel.usmarc" );
-ok( defined $file, "Opened input file" );
+isa_ok( $file, 'MARC::File', "Opened input file" );
 
 my $diskmarc;
 for my $n ( 1..8 ) {
 	$diskmarc = $file->next();
-	ok( defined $diskmarc, "  Record #$n" );
+	isa_ok( $diskmarc, 'MARC::Record', "  Record #$n" );
 }
 	
 if ( $diskmarc ) {
