@@ -14,11 +14,11 @@ eval 'use warnings' if $] >= 5.006;
 
 Version 1.11
 
-    $Id: Batch.pm,v 1.14 2002/09/10 21:11:42 edsummers Exp $
+    $Id: Batch.pm,v 1.17 2002/10/10 02:36:09 edsummers Exp $
 
 =cut
 
-use vars '$VERSION'; $VERSION = '1.11';
+use vars '$VERSION'; $VERSION = '1.12';
 
 =head1 SYNOPSIS
 
@@ -39,7 +39,7 @@ None.  Everything is a class method.
 
 =head1 METHODS
 
-=head2 new( $type, [@files] )
+=head2 new( $type, @files )
 
 Create a C<MARC::Batch> object that will process C<@files>.
 

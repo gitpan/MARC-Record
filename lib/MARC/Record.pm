@@ -19,11 +19,11 @@ use Carp qw(croak);
 
 Version 1.11
 
-    $Id: Record.pm,v 1.32 2002/09/10 21:11:43 edsummers Exp $
+    $Id: Record.pm,v 1.37 2002/10/10 16:21:09 petdance Exp $
 
 =cut
 
-use vars '$VERSION'; $VERSION = '1.11';
+use vars '$VERSION'; $VERSION = '1.12';
 
 use Exporter;
 use vars qw( @ISA @EXPORTS @EXPORT_OK );
@@ -90,8 +90,8 @@ sub fields() {
 Returns a list of tags that match the field specifier, or in scalar
 context, just the first matching tag.
 
-The field specifier can be a simple number (i.e. "245"), or use the "X" 
-notation of wildcarding (i.e. subject tags are "6XX").
+The field specifier can be a simple number (i.e. "245"), or use the "." 
+notation of wildcarding (i.e. subject tags are "6..").
 
 =cut
 
@@ -107,9 +107,7 @@ sub field {
 
 	# Compile & stash it if necessary
 	if ( not defined $regex ) {
-	    my $pattern = $tag;
-	    $pattern =~ s/X/\\d/g;
-	    $regex = qr/^$pattern$/;
+	    $regex = qr/^$tag$/;
 	    $field_regex{ $tag } = $regex;
 	} # not defined
 
@@ -129,14 +127,14 @@ sub field {
 
 Shortcut method for getting just a subfield for a tag.  These are equivalent:
 
-  my $title = $marc->field(245)->subfield("a");
-  my $title = $marc->subfield(245,"a");
+  my $title = $marc->field('245')->subfield("a");
+  my $title = $marc->subfield('245',"a");
 
 If either the field or subfield can't be found, C<undef> is returned.
 
 =cut
 
-sub subfield($$) {
+sub subfield {
     my $self = shift;
     my $tag = shift;
     my $subfield = shift;
@@ -145,7 +143,7 @@ sub subfield($$) {
     return $field->subfield($subfield);
 } # subfield()
 
-=head2 insert_grouped_field(C<$field>)
+=head2 insert_grouped_field(field)
 
 Will insert the specified MARC::Field object into the record in 'grouped
 order' and return true (1) on success, and false (undef) on failure.
@@ -167,7 +165,7 @@ sub insert_grouped_field {
     my $found = 0;
     foreach my $field ($self->fields()) {
 	if ( int($field->tag() / 100) > $limit ) {
-	    $self->insert_field_before($field,$new);
+	    $self->insert_fields_before($field,$new);
 	    $found = 1;
 	    last;
 	}
@@ -194,13 +192,13 @@ sub _all_parms_are_fields {
     return 1;
 }
 
-=head2 append_fields(C<@fields>)
+=head2 append_fields(@fields)
 
 Appends the field specified by C<$field> to the end of the record. 
 C<@fields> need to be MARC::Field objects.
 
     my $field = MARC::Field->new('590','','','a' => 'My local note.');
-    $record->append_field($field);
+    $record->append_fields($field);
 
 Returns the number of fields appended.
 
@@ -255,7 +253,8 @@ sub insert_fields_before {
 
 =head2 insert_fields_after($after_field,@new_fields)
 
-Identical to L<insert_fields_before()>, but fields are added after C<$after_field>.
+Identical to C<insert_fields_before()>, but fields are added after 
+C<$after_field>.
 
 =cut
 
@@ -282,7 +281,7 @@ sub insert_fields_after {
     return scalar @new;
 }
 
-=head2 delete_field(C<$field>)
+=head2 delete_field($field)
 
 Deletes a field from the record.
 
@@ -374,7 +373,7 @@ sub author() {
     return "<No author tag found>";
 }
 
-=head2 leader([text])
+=head2 leader()
 
 Returns the leader for the record.  Sets the leader if I<text> is defined.
 No error checking is done on the validity of the leader.
@@ -408,7 +407,7 @@ sub set_leader_lengths {
     substr($self->{_leader},12,5) = sprintf("%05d",$baseaddr);
 }
 
-=head2 clone( [field specs] )
+=head2 clone()
 
 The C<clone()> method makes a copy of an existing MARC record and returns
 the new version.  Note that you cannot just say:
@@ -440,7 +439,7 @@ sub clone {
     my $filtered = @keeper_tags ? [$self->field( @keeper_tags )] : undef;
 
     for my $field ( $self->fields() ) {
-        if ( !$filtered || (grep {$field==$_} @$filtered ) ) {
+        if ( !$filtered || (grep {$field eq $_} @$filtered ) ) {
 	    $clone->add_fields( $field->clone );
         }
     }
@@ -473,9 +472,10 @@ sub warnings() {
 
 =head2 add_fields()
 
-C<add_fields()> is now deprecated, and users are encouraged to use C<append_field()>,
-C<insert_field_after()>, and C<insert_field_before()> since they do what you want 
-probably. It is still here though, for backwards compatability.
+C<add_fields()> is now deprecated, and users are encouraged to use 
+C<append_fields()>, C<insert_fields_after()>, and C<insert_fields_before()> 
+since they do what you want probably. It is still here though, for backwards 
+compatability.
 
 C<add_fields()> adds MARC::Field objects to the end of the list.  Returns the 
 number of fields added, or C<undef> if there was an error.
@@ -683,6 +683,18 @@ Imagine something like this:
 
 =back
 
+=head1 BUGS, WISHES AND CORRESPONDENCE
+
+Please feel free to email me at andy@petdance.com.  I'm glad to help as
+best I can, and I'm always interested in bugs, suggestions and patches.
+
+The MARC::Record development team uses the RT bug tracking system at
+L<http://rt.cpan.org>.  If your email is about a bug or suggestion,
+please report it through the RT system.  This is a huge help for
+the team, and you'll be notified of progress as things get fixed or
+updated.  If you prefer not to use the website, you can send your bug
+to bug-MARC-Record@rt.cpan.org.
+
 =head1 IDEAS
 
 Ideas are things that have been considered, but nobody's actually asked for.
@@ -704,7 +716,7 @@ employers of the various contributors to the code.
 
 =head1 AUTHOR
 
-Andy Lester, E<lt>marc@petdance.comE<gt> or E<lt>alester@flr.follett.comE<gt>
+Andy Lester, E<lt>marc@petdance.comE<gt>
 
 =cut
 

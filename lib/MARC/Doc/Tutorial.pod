@@ -26,7 +26,7 @@ MARC data, written in the 'cookbook' style. Inside you will find recipes on
 how to read, write, update and convert MARC data using the MARC::Record CPAN 
 package. As with any cookbook you should feel free to dip in at any section
 and use the recipe you find interesting. If you are new to Perl you may 
-want to read from the 
+want to read from the beginning.
 
 The document you are reading is distributed with the MARC::Record package, 
 however in case you are reading it somewhere else you can find the latest 
@@ -34,7 +34,7 @@ version at CPAN http://www.cpan.org/modules/by-module/MARC/.
 
 You'll notice that some sections aren't filled in yet, which is a result
 of this document being a work in progress. If you have ideas for new sections
-please let the make a suggestion on perl4lib http://www.rice.edu/perl4lib.
+please let the make a suggestion on perl4lib http://www.rice.edu/perl4lib/
 
 =head2 History of MARC on CPAN
 
@@ -272,7 +272,7 @@ record of that particular type. For example:
 
 =head2 Looking at a set of related fields
 
-field() also allows you to retrieve similar fields using 'X' as a wildcard. 
+field() also allows you to retrieve similar fields using '.' as a wildcard. 
 For example, this functionality allows you to retrieve all the note fields
 in one shot.
 
@@ -283,7 +283,7 @@ in one shot.
    4   my $file = MARC::File::USMARC->in('file.dat');
    5   my $record = $file->next();
    6   
-   7   foreach my $field ($record->field('5XX')) {
+   7   foreach my $field ($record->field('5..')) {
    8     print $field->tag(),' contains ',$field->as_string(),"\n";
    9   }
 
@@ -1058,6 +1058,65 @@ yet. Feel free to suggest new ones, or to fill these in.
 
 =head2 Subject headings
 
+Suppose you have a batch of MARC records and you want to extract all the
+subject headings, and generate a report of how many times each subject
+heading appeared in the batch. 
+
+   1   use MARC::File::USMARC;
+   2   use constant MAX => 20;
+   3   
+   4   my %counts;
+   5   
+   6   my $filename = shift or die "Must specify filename\n";
+   7   my $file = MARC::File::USMARC->in( $filename );
+   8   
+   9   while ( my $marc = $file->next() ) {
+  10       for my $field ( $marc->field("6..") ) {
+  11           my $heading = $field->subfield('a');
+  12   
+  13           # Remove certain trailing whitespace and punctuation.
+  14           $heading =~ s/[.,]?\s*$//;
+  15   
+  16           # Now count it
+  17           ++$counts{$heading};
+  18       }
+  19   }
+  20   $file->close();
+  21   
+  22   # Sort the list of headings based on the count of each.
+  23   my @headings = reverse sort { $counts{$a} <=> $counts{$b} } keys %counts;
+  24   
+  25   # Take the top N hits.
+  26   @headings = @headings[0..MAX-1];
+  27   
+  28   # Print out the results
+  29   for my $heading ( @headings ) {
+  30       printf( "%5d %s\n", $counts{$heading}, $heading );
+  31   }
+
+Which will generate results like this:
+
+  600 United States
+  140 World War, 1939-1945
+   78 Great Britain
+   63 Afro-Americans
+   61 Indians of North America
+   58 American poetry
+   55 France
+   53 West (U.S.)
+   53 Science fiction
+   53 American literature
+   50 Shakespeare, William
+   48 Soviet Union
+   46 Mystery and detective stories
+   45 Presidents
+   43 China
+   40 Frontier and pioneer life
+   38 English poetry
+   37 Authors, American
+   37 English language
+   35 Japan
+
 =head2 HTML
 
 =head2 XML
@@ -1071,4 +1130,29 @@ yet. Feel free to suggest new ones, or to fill these in.
 =head2 Procite/Endnote
 
 =head2 MicroLif
+
+=head1 CONTRIBUTORS
+
+Many thanks to all the contributors who have made this document possible.
+
+=over 4
+
+=item * 
+
+Andy Lester <andy@petdance.com>
+
+=item *
+
+Christopher Morgan <morgan@acm.org>
+
+=item *
+
+Jackie Shieh <jshieh@umich.edu>
+
+=item * 
+
+Ed Summers <ehs@pobox.com>
+
+=back
+
 
