@@ -1,0 +1,26 @@
+#!/usr/bin/perl -w
+
+use warnings;
+use strict;
+use integer;
+
+use MARC::Record;
+
+my $IN = shift or die;
+my $OUT = shift or die;
+
+warn "Using MARC::Record v$MARC::Record::VERSION\n";
+open( IN, "<", $IN ) or die "Couldn't open $IN: $!\n";
+open( OUT, ">", $OUT ) or die "Couldn't open $OUT: $!\n";
+
+while ( !eof(IN) ) {
+	my $marc = MARC::Record::next_from_file( *IN );
+	die $MARC::Record::ERROR unless $marc;
+
+	print OUT $marc->as_usmarc;
+
+	warn $marc->subfield(245,"a"), "\n";
+} # while
+
+close IN or die "Error closing $IN: $!\n";
+close OUT or die "Error closing $OUT: $!\n";
