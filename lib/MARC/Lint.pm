@@ -8,19 +8,6 @@ eval 'use warnings' if $] >= 5.006;
 
 MARC::Lint - Perl extension for checking validity of MARC records
 
-=head1 VERSION
-
-Version 1.18
-
-    $Id: Lint.pm,v 1.22 2003/02/16 23:24:28 edsummers Exp $
-
-=cut
-
-use vars '$VERSION'; $VERSION = '1.18';
-
-use MARC::Record;
-use MARC::Field;
-
 =head1 SYNOPSIS
 
   use MARC::Record;
@@ -97,6 +84,9 @@ No parms needed.  The C<MARC::Lint> object is little more than a list of warning
 and a bunch of rules.
 
 =cut
+
+use MARC::Record;
+use MARC::Field;
 
 sub new() {
 	my $class = shift;
@@ -282,7 +272,7 @@ employers of the various contributors to the code.
 
 =head1 AUTHOR
 
-Andy Lester, E<lt>marc@petdance.comE<gt> or E<lt>alester@flr.follett.comE<gt>
+Andy Lester, E<lt>marc@petdance.comE<gt>
 
 =cut
 

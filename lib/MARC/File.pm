@@ -12,16 +12,6 @@ eval 'use warnings' if $] >= 5.006;
 
 use vars qw( $ERROR );
 
-=head1 VERSION
-
-Version 1.18
-
-    $Id: File.pm,v 1.29 2003/02/16 23:24:28 edsummers Exp $
-
-=cut
-
-use vars '$VERSION'; $VERSION = '1.18';
-
 =head1 SYNOPSIS
 
     use MARC::File::USMARC;
@@ -207,7 +197,7 @@ employers of the various contributors to the code.
 
 =head1 AUTHOR
 
-Andy Lester, E<lt>marc@petdance.comE<gt> or E<lt>alester@flr.follett.comE<gt>
+Andy Lester, E<lt>marc@petdance.comE<gt>
 
 =cut
 

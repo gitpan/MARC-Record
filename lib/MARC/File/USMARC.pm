@@ -13,16 +13,6 @@ eval 'use warnings' if $] >= 5.006;
 
 use vars qw( $ERROR );
 
-=head1 VERSION
-
-Version 1.18
-
-    $Id: USMARC.pm,v 1.39 2003/02/16 23:24:28 edsummers Exp $
-
-=cut
-
-use vars '$VERSION'; $VERSION = '1.18';
-
 use MARC::File;
 use vars qw( @ISA ); @ISA = qw( MARC::File );
 
@@ -357,7 +347,7 @@ employers of the various contributors to the code.
 
 =head1 AUTHOR
 
-Andy Lester, E<lt>marc@petdance.comE<gt> or E<lt>alester@flr.follett.comE<gt>
+Andy Lester, E<lt>marc@petdance.comE<gt>
 
 =cut
 

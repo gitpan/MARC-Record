@@ -1,10 +1,9 @@
-# $Id: 64.create.t,v 1.5 2002/08/25 21:27:59 petdance Exp $
+# $Id: 64.create.t,v 1.7 2003/02/26 05:57:16 petdance Exp $
 
 use strict;
 use integer;
-eval 'use warnings' if $] >= 5.006;
 
-use Test::More tests=>6;
+use Test::More tests=>7;
 
 BEGIN {
     use_ok( 'MARC::Record');
@@ -20,7 +19,9 @@ isa_ok( $f245, 'MARC::Field', '245 creation');
 my $f650 = MARC::Field->new('650','','0','a','World Wide Web.');
 isa_ok( $f650, 'MARC::Field', '650 creation');
 
-$record->append_fields($f245,$f650);
+my $nadds = $record->append_fields($f245,$f650);
+is( $nadds, 2 );
+
 $record->as_usmarc(); ## side effect is that leader offsets are calculated  
 
 my $expected = 

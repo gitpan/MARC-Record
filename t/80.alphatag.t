@@ -1,12 +1,12 @@
-use Test::More tests => 17;
+use Test::More tests => 30;
 
 use strict;
-use MARC::Record;
-use MARC::Field;
-use MARC::File;
-use MARC::File::USMARC;
-use MARC::File::MicroLIF;
-use Data::Dumper;
+
+use_ok( 'MARC::Record' );
+use_ok( 'MARC::Field' );
+use_ok( 'MARC::File' );
+use_ok( 'MARC::File::USMARC' );
+use_ok( 'MARC::File::MicroLIF' );
 
 ## According to the MARC spec tags can have alphanumeric
 ## characters in them. They are rarely seen, but they are 
@@ -14,18 +14,22 @@ use Data::Dumper;
 ## Tags must be alphanumeric, and three characters long.
 
 my $record = MARC::Record->new();
+isa_ok( $record, "MARC::Record" );
+
 my $field;
 
 ## this should fail since it is four chars long 
 eval {
     $field = MARC::Field->new( '245A', '', '', 'a' => 'Test' );
 };
+ok( !defined $field );
 like($@ ,qr/Tag "245A" is not a valid tag/, 'caught invalid tag "245A"' );
 
 ## this should fail since it is a four digit number
 eval { 
     $field = MARC::Field->new( '2456', '', '', 'a' => 'Test' );
 };
+ok( !defined $field );
 like($@, qr/Tag "2456" is not a valid tag/, 'caught invalid tag "2456"' );
 
 ## this should work be ok
@@ -34,8 +38,9 @@ isa_ok( $field, 'MARC::Field', 'field with alphanumeric tag' );
 
 is ( $field->subfield('a'), 'Test', 'subfield()' );
 
-$field->update( 'a' => '123' );
-is ( $field->subfield('a'), '123', 'update()' );
+my $n = $field->update( 'a' => '123' );
+is( $n, 1 );
+is( $field->subfield('a'), '123', 'update()' );
 
 is_deeply( $field->subfields(), [ 'a' => 123 ], 'subfields()' );
 is( $field->tag(), 'RAZ', 'tag()' );
@@ -60,10 +65,10 @@ $record->append_fields( $field );
 my $new = $record->field('RAZ');
 isa_ok( $new, 'MARC::Field', 'able to grab field with alpha tag' );
 
-$new = MARC::Field->new('100', '', '', 'a' => 'Gumble, Seth');
+$new = MARC::Field->new('100', '', '', 'a' => 'Gates, Bill');
 $record->append_fields( $new );
 
-$new = MARC::Field->new('110', '', '', 'a' => 'Follett Library Resources');
+$new = MARC::Field->new('110', '', '', 'a' => 'Microsoft');
 $record->append_fields( $new );
 
 my @fields = $record->field( '1..' );
@@ -78,7 +83,11 @@ print OUT $record->as_usmarc();
 close(OUT);
 
 my $file = MARC::File::USMARC->in( "$0.usmarc" );
+isa_ok( $file, 'MARC::File::USMARC' );
+
 my $newRec = $file->next();
+isa_ok( $newRec, 'MARC::Record' );
+
 is( $newRec->as_usmarc(), $marc, 'as_usmarc()' );
 unlink( "$0.usmarc" );
 
@@ -88,6 +97,8 @@ unlink( "$0.usmarc" );
 my $micro = $record->as_formatted();
 
 $file = MARC::File::MicroLIF->in( 't/alphatag.lif' );
+isa_ok( $file, 'MARC::File::MicroLIF' );
 $newRec = $file->next();
+isa_ok( $newRec, 'MARC::Record' );
 is ($newRec->as_formatted(), $micro, 'as_formatted()' );
 

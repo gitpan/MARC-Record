@@ -1,10 +1,9 @@
-# $Id: 66.grouped.t,v 1.1 2002/09/12 16:01:07 edsummers Exp $
+# $Id: 66.grouped.t,v 1.3 2003/02/26 05:43:16 petdance Exp $
 
 use strict;
 use integer;
-eval 'use warnings' if $] >= 5.006;
 
-use Test::More tests=>6;
+use Test::More tests=>7;
 
 BEGIN {
     use_ok( 'MARC::Batch' );
@@ -20,7 +19,8 @@ isa_ok( $record, 'MARC::Record', 'Record object creation' );
 my $new = MARC::Field->new('270','','','a','1 Whitehouse Drive, DC.');
 isa_ok( $new, 'MARC::Field', 'Field creation');
 
-$record->insert_grouped_field($new);
+my $nadds = $record->insert_grouped_field($new);
+is( $nadds, 1 );
 
 my $expected = 
 <<MARC_DATA;

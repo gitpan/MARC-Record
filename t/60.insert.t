@@ -1,10 +1,9 @@
-# $Id: 60.insert.t,v 1.6 2002/08/25 21:27:59 petdance Exp $
+# $Id: 60.insert.t,v 1.8 2003/02/26 05:30:45 petdance Exp $
 
 use strict;
 use integer;
-eval 'use warnings' if $] >= 5.006;
 
-use Test::More tests=>12;
+use Test::More tests=>16;
 
 BEGIN {
     use_ok( 'MARC::Batch' );
@@ -28,7 +27,8 @@ isa_ok( $newagain, 'MARC::Field', 'Field creation' );
 
 ## test append_fields()
 
-$record->append_fields($new);
+my $nappended = $record->append_fields($new);
+is( $nappended, 1, "Added one field" );
 
 my $expected = 
 <<MARC_DATA;
@@ -67,7 +67,8 @@ MARC_DATA
 chomp($expected);
 
 is($record->as_formatted, $expected, "append_fields");
-$record->delete_field($new);
+my $ndeleted = $record->delete_field($new);
+is( $ndeleted, 1, "Deleted one field" );
 
 ## test insert_fields_after
 
@@ -112,8 +113,11 @@ MARC_DATA
 chomp($expected);
 
 is($record->as_formatted,$expected,'insert_fields_after');
-$record->delete_field($new);
-$record->delete_field($newagain);
+my $n = $record->delete_field($new);
+is( $n, 1 );
+
+$n = $record->delete_field($newagain);
+is( $n, 1 );
 
 
 ## test insert_record_before

@@ -1,10 +1,9 @@
-# $Id: 50.batch.t,v 1.7 2002/12/18 20:13:18 edsummers Exp $
+# $Id: 50.batch.t,v 1.9 2003/02/25 20:41:59 petdance Exp $
 
 use strict;
 use integer;
-eval 'use warnings' if $] >= 5.006;
 
-use Test::More tests=>137;
+use Test::More tests=>268;
 
 BEGIN {
     use_ok( 'MARC::Batch' );
@@ -19,6 +18,8 @@ USMARC: {
 
     my $n = 0;
     while ( my $marc = $batch->next() ) {
+	my $f245 = $marc->field( '245' );
+	isa_ok( $f245, 'MARC::Field' );
 	isa_ok( $marc, 'MARC::Record' );
 	++$n;
     }
@@ -36,6 +37,8 @@ MicroLIF: {
 
     my $n = 0;
     while ( my $marc = $batch->next() ) {
+	my $f245 = $marc->field( '245' );
+	isa_ok( $f245, 'MARC::Field' );
 	isa_ok( $marc, 'MARC::Record' );
 	++$n;
     }
