@@ -1,5 +1,28 @@
 Revision history for Perl extension MARC::Record.
 
+1.36	March 9th, 2004
+
+	[THINGS THAT MAY BREAK YOUR CODE]
+	- Renamed MARC::Field->is_control_tag() to is_control_field().
+
+	[FIXES]
+	- fixed SYNOPSIS in MARC::Batch to use constructor. Thanks Ed Sperr
+	  New England College of Optometry.
+	- fixed reference to the tutorial in README. Thanks Stephen Graham,
+	  London Business School.
+	- marcdump and marclint didn't recognize the -v flag.
+        - calls to MARC::Field::subfield() on a control field (tag < 010 ) 
+          will cause a fatal error, with a friendly message telling you 
+          to use data(). Similarly a call to data() on a field >= 010
+          will result in a friendly error telling you to use subfield().
+          Previously a warning was generated, and MARC::Field continued
+          along only to barf when it was unable to find an array ref in 
+          $self->{ _subfields }.
+
+	[ENHANCEMENTS]
+	- Finished documentation on all modules.  Updated t/pod-coverage.t
+	  to keep us in line.
+
 1.34	December 16th, 2003
 	[ENHANCEMENTS]
 	- modified MARC::File::in() to allow passing in filehandles instead

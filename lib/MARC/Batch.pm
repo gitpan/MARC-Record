@@ -12,7 +12,7 @@ multiple-file aspects.
 
     use MARC::Batch;
 
-    my $batch = new MARC::Batch( 'USMARC', @files );
+    my $batch = new MARC::Batch-new( 'USMARC', @files );
     while ( my $marc = $batch->next ) {
 	print $marc->subfield(245,"a"), "\n";
     }
@@ -80,7 +80,7 @@ sub new {
 } # new()
 
 
-=head2 C<next()>
+=head2 next()
 
 Read the next record from that batch, and return it as a MARC::Record
 object.  If the current file is at EOF, close it and open the next
