@@ -1,24 +1,30 @@
 package MARC::Lint;
 
+use 5.6.0;
+use strict;
+use integer;
+
 =head1 NAME
 
 MARC::Lint - Perl extension for checking validity of MARC records
 
+=head1 VERSION
+
+Version 0.90
+
+    $Id: Lint.pm,v 1.3 2002/04/01 20:34:24 petdance Exp $
+
 =cut
 
-use 5.005;
-use strict;
-use integer;
+our $VERSION = '0.90';
 
 use MARC::Record;
 use MARC::Field;
-
 
 =head1 SYNOPSIS
 
   use MARC::Record;
   use MARC::Lint;
-
 
   my $linter = new MARC::Lint;
 

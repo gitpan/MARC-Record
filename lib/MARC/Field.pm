@@ -1,6 +1,6 @@
 package MARC::Field;
 
-use 5.005;
+use 5.6.0;
 use strict;
 use integer;
 
@@ -12,6 +12,16 @@ use vars qw( $ERROR );
 =head1 NAME
 
 MARC::Field - Perl extension for handling MARC fields
+
+=head1 VERSION
+
+Version 0.90
+
+    $Id: Field.pm,v 1.4 2002/04/01 20:34:24 petdance Exp $
+
+=cut
+
+our $VERSION = '0.90';
 
 =head1 SYNOPSIS
 

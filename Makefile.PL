@@ -1,4 +1,4 @@
-use 5.005;
+use 5.6.0;
 use strict;
 use ExtUtils::MakeMaker;
 
@@ -21,10 +21,13 @@ sub filecheck {
 	PREREQ_PM	=> {
 			    'Test::More' => 0,
 			    },
-	EXE_FILES	=> [ qw( pl/marcdump pl/marclint pl/lif2marc ) ],
+	EXE_FILES	=> [ qw( pl/marcdump pl/marclint ) ],
 	dist 		=> {
 			    COMPRESS => 'gzip -9f', 
 			    SUFFIX => 'gz',
+			    },
+	depend		=> { 
+			    Makefile => '$(VERSION_FROM)'
 			    },
 	);
 

@@ -15,7 +15,8 @@ use strict;
 use integer;
 
 use lib qw( /home/alester/marc-record/lib );
-use MARC::Record;
+
+use MARC::File;
 use Getopt::Long;
 
 my $opt_print = 1;
@@ -23,10 +24,12 @@ my $opt_quiet = 0;
 my $opt_stats = 1;
 my @opt_field = ();
 my $opt_help = 0;
+my $opt_lif = 0;
 
 my $rc =
     GetOptions(
 	"print!"    => \$opt_print,
+	"lif!"	    => \$opt_lif,
 	"quiet"	    => \$opt_quiet,
 	"stats!"    => \$opt_stats,
 	"field=s"   => \@opt_field,
@@ -38,6 +41,9 @@ if ( $opt_help || !@files || !$rc ) {
     print <DATA>;
     exit 1;
 }
+
+my $class = $opt_lif ? "MARC::File::MicroLIF" : "MARC::File::USMARC";
+eval "require $class"; # Must be quoted to get path searching
 	
 my %counts;
 my %errors;
@@ -46,12 +52,12 @@ for my $filename ( @files ) {
 	$errors{$filename} = 0;
 
 	warn "$filename\n" unless $opt_quiet;
-	open( my $fh, "<", $filename ) or die "Couldn't open $filename: $!\n";
 
-	while ( !eof($fh) ) {
+	my $file = $class->in( $filename ) or die $MARC::File::ERROR;
+
+	while ( my $marc = $file->next() ) {
 		++$counts{$filename};
 		warn "$counts{$filename} records\n" if ( !$opt_quiet && ($counts{$filename} % 1000 == 0) );
-		my $marc = MARC::Record::next_from_file( $fh ) or die $MARC::Record::ERROR;
 
 		if ( @opt_field ) {
 			$marc = $marc->clone( @opt_field );
@@ -63,7 +69,7 @@ for my $filename ( @files ) {
 			print join( "\n", $marc->warnings(), "" );
 		}
 	} # while
-	close $fh;
+	$file->close();
 } # for 
 
 if ( $opt_stats ) {
@@ -80,6 +86,7 @@ Usage: marcdump [options] file(s)
 Options:
     --help	    Print this summary
     --[no]print	    Print a MicroLIF-style dump of each record
+    --lif	    Input files are MicroLIF, not USMARC
     --field=spec    Specify a field spec to include.  There may be many.
 		    Examples:
 			--field=245 --field=1XX

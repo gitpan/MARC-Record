@@ -5,8 +5,12 @@
 use strict;
 use integer;
 
-use MARC::Record;
 use Test::More 'no_plan';
+
+BEGIN {
+    use_ok( 'MARC::Record' );
+    use_ok( 'MARC::File::USMARC' );
+}
 
 pass( 'Loaded modules' );
 
@@ -52,7 +56,9 @@ is( $nfields, 10,	'Expected 10 fields' );
 
 my $expected = "00397nam  22001458a 4500001001200000003000600012010001600018100001700034245006800051250001200119260004300131650003700174700002300211700001700234\x1Efol05865967\x1EIMchF\x1E  \x1Fa   00055799\x1E1 \x1FaWall, Larry.\x1E10\x1FaProgramming Perl / \x1FcLarry Wall, Tom Christiansen & Jon Orwant.\x1E  \x1Fa3rd ed.\x1E  \x1FaCambridge, Mass. : \x1FbO'Reilly, \x1Fc2000.\x1E 0\x1FaPerl (Computer program language)\x1E1 \x1FaChristiansen, Tom.\x1E1 \x1FaOrwant, Jon.\x1E\x1D";
 
-ok( $marc->as_usmarc eq $expected,  'as_usmarc()' );
+is( MARC::File::USMARC->encode( $marc ), $expected,  'encode()' );
+
+is( $marc->as_usmarc(), $expected,  'as_usmarc()' );
 
 # Test 2: as_string()
 $expected = join( "", <DATA> );
@@ -80,20 +86,19 @@ is( $marc->subfield( 100, "a" ), "Wall, Larry.", 'Field/subfield lookup' );
 
 # Test 6: Reading from disk
 
-my $filename = "t/camel.usmarc";
-open( my $fh, $filename );
-ok( $fh, 'Reading $filename from disk' );
+my $file = MARC::File::USMARC->in( "t/camel.usmarc" );
+ok( defined $file, "Opened input file" );
 
 my $diskmarc;
 for my $n ( 1..8 ) {
-	$diskmarc = MARC::Record::next_from_file( $fh );
+	$diskmarc = $file->next();
 	ok( defined $diskmarc, "  Record #$n" );
 }
 	
 if ( $diskmarc ) {
 	is( $diskmarc->subfield(245,"c"), $marc->subfield(245,"c"), "Disk MARC matches built MARC" );
 }
-close $fh;
+$file->close;
 
 __END__
 LDR 00397nam  22001458a 4500
