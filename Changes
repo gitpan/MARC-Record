@@ -1,5 +1,25 @@
 Revision history for Perl extension MARC::Record.
 
+2.0
+        [THINGS THAT MAY BREAK YOUR CODE]
+        - Perl 5.8.2 required for utf8 handling
+
+        [ENHANCEMENTS]
+        - removed dead utf8 handling code
+        - added MARC::File::Encode wrapper around Encode module since
+          Encode exports encode() by default which conflicts with existing
+          MARC::File::Encode::encode (yuck).
+        - added MARC::Record::encoding() for getting/setting record encoding
+        - modified t/utf8.t to unconditionally do tests since a modern
+          perl will now be required.
+        - Added --hex switch to marcdump, which dumps the record in
+          hexadecimal.  The offsets are in decimal so that you can match
+          them up to values in the leader.  The offset is reset to 0
+          when we're past the directory so that you can match up the data
+          with the offsets in the directory.
+        - docfixes in Record.pm (thanks Todd Holbrook)
+        - added MARC::Field->delete_subfields
+
 1.39_02 Tue Dec 21 09:29:45 CST 2004
 
         [THINGS THAT MAY BREAK YOUR CODE]
@@ -24,6 +44,14 @@ Revision history for Perl extension MARC::Record.
               my $another = MARC::Record->new();
         - Removed MARC::Lint and the marclint utility to a separate
           package on CPAN.
+        - MARC::Doc::Tutorial.pod updated to reflect the change.
+        - Fixed t/50.batch.t to use File::Spec in the MicroLIF section
+        - Other tests in t/ also use File::Spec to specify paths
+
+        - MARC::File::USMARC ignores \x1a, the DOS end-of-file character,
+        between records and at the end of files.
+        - Added corresponding tests dosEOF.t, cameleof.usmarc, and
+        sample1eof.usmarc.
 
         [FIXES]
         - Clarified docs on the interface to field(), and fixed problem
@@ -41,6 +69,10 @@ Revision history for Perl extension MARC::Record.
         - Fixed behavior of MARC::Batch::next() to not reset warnings
           on the MARC::Record object that it returns. Also added test to 
           t/75.warnings.t
+
+        - Added code to MARC::MicroLIF::decode() to change line endings to those
+        of the platform before decoding the passed-in string. Also added test to
+        t/81.decode.t
 
         - Turned off utf8 handling until it can safely be done without 
           converting all MARC data to utf8.

@@ -245,30 +245,72 @@ sub add_subfields {
     return @_/2;
 }
 
+=head2 delete_subfield()
+
+delete_subfield() allows you to remove subfields from a field: 
+
+    # delete any subfield a in the field
+    $field->delete_subfield(code => 'a');
+
+    # delete any subfield a or u in the field
+    $field->delete_subfield(code => ['a', 'u']);
+
+If you want to only delete subfields at a particular position you can 
+use the pos parameter:
+
+    # delete subfield u at the first position
+    $field->delete_subfield(code => 'u', pos => 0);
+
+    # delete subfield u at first or second position
+    $field->delete_subfield(code => 'u', pos => [0,1]);
+
+You can specify a regex to for only deleting subfields that match:
+
+   # delete any subfield u that matches zombo.com
+   $field->delete_subfield(code => 'u', match => qr/zombo.com/);
+
+=cut
+
+sub delete_subfield {
+    my ($self, %options) = @_;
+    my $codes = _normalize_arrayref($options{code});
+    my $positions = _normalize_arrayref($options{'pos'});
+    my $match = $options{match};
+   
+    croak 'match must be a compiled regex' 
+      if $match and ref($match) ne 'Regexp';
+
+    my @current_subfields = @{$self->{_subfields}};
+    my @new_subfields = ();
+    my $removed = 0;
+    my $subfield_num = $[ - 1; # users $[ preferences control indexing 
+
+    while (@current_subfields > 0) {
+        $subfield_num += 1;
+        my $subfield_code = shift @current_subfields;
+        my $subfield_value = shift @current_subfields;
+        if ((@$codes==0 or grep {$_ eq $subfield_code} @$codes)
+            and (!$match or $subfield_value =~ $match) 
+            and (@$positions==0 or grep {$_ == $subfield_num} @$positions)) {
+            $removed += 1;
+            next;
+        }
+        push( @new_subfields, $subfield_code, $subfield_value);
+    }
+    $self->{_subfields} = \@new_subfields;
+    return $removed;
+}
+
 =head2 delete_subfields()
 
-delete_subfields() will remove *all* of a particular type of subfield from 
-a field.
+Delete all subfields with a given subfield code. This is here for backwards
+compatability, you should use the more flexible delete_subfield().
 
-    my $count = $field->subfields( 'a' );
-    print "deleted $count subfield 'a' from the field\n";
-
-    my $count = $field->subfields( 'xz' );
-    print "deleted $count subfields 'x' and 'z' from the field\n";
-   
 =cut
 
 sub delete_subfields {
-    my ( $self, $deletes ) = @_;
-    my @deletes = split //, $deletes;
-    my @subfields = @{ $self->{_subfields} };
-    my @new_subfields;
-    for ( my $i=0; $i<@subfields; $i=$i+2 ) {
-        push( @new_subfields, $subfields[$i], $subfields[$i+1] )
-            unless grep { $_ eq $subfields[$i] } @deletes;
-    }
-    $self->{_subfields} = \@new_subfields;
-    return( (@subfields - @new_subfields)/2 );
+    my ($self, $code) = @_;
+    return $self->delete_subfield(code => $code);
 }
 
 =head2 update()
@@ -307,8 +349,8 @@ sub update {
 
     ## tags 000 - 009 don't have indicators or subfields
     if ( $self->is_control_field ) {
-	$self->{_data} = shift;
-	return(1);
+        $self->{_data} = shift;
+        return(1);
     }
 
     ## otherwise we need to update subfields and indicators
@@ -317,34 +359,34 @@ sub update {
 
     while ( @_ ) {
 
-	my $arg = shift;
-	my $val = shift;
+        my $arg = shift;
+        my $val = shift;
 
-	## indicator update
-	if ($arg =~ /^ind[12]$/) {
-	    $self->{"_$arg"} = $val;
-	    $changes++;
-	}
+        ## indicator update
+        if ($arg =~ /^ind[12]$/) {
+            $self->{"_$arg"} = $val;
+            $changes++;
+        }
 
-	## subfield update
-	else {
-	    my $found = 0;
-	    ## update existing subfield
-	    for ( my $i=0; $i<@data; $i+=2 ) {
-		if ($data[$i] eq $arg) {
-		    $data[$i+1] = $val;
-		    $found = 1;
-		    $changes++;
-		    last;
-		}
-	    } # for
+        ## subfield update
+        else {
+            my $found = 0;
+            ## update existing subfield
+            for ( my $i=0; $i<@data; $i+=2 ) {
+                if ($data[$i] eq $arg) {
+                    $data[$i+1] = $val;
+                    $found = 1;
+                    $changes++;
+                    last;
+                }
+            } # for
 
-	    ## append new subfield
-	    if ( !$found ) {
-		push( @data, $arg, $val );
-		$changes++;
-	    }
-	}
+            ## append new subfield
+            if ( !$found ) {
+                push( @data, $arg, $val );
+                $changes++;
+            }
+        }
 
     } # while
 
@@ -417,7 +459,7 @@ sub as_string() {
     my $subs = $self->{_subfields};
     my $nfields = @$subs / 2;
     for my $i ( 1..$nfields ) {
-	my $offset = ($i-1)*2;
+        my $offset = ($i-1)*2;
         my $code = $subs->[$offset];
         my $text = $subs->[$offset+1];
         push( @subs, $text ) if !$subfields || $code =~ /^[$subfields]$/;
@@ -443,10 +485,10 @@ sub as_formatted() {
     } else {
         my $hanger = sprintf( "%03s %1.1s%1.1s", $self->{_tag}, $self->{_ind1}, $self->{_ind2} );
 
-	my $subs = $self->{_subfields};
-	my $nfields = @$subs / 2;
-	my $offset = 0;
-	for my $i ( 1..$nfields ) {
+        my $subs = $self->{_subfields};
+        my $nfields = @$subs / 2;
+        my $offset = 0;
+        for my $i ( 1..$nfields ) {
             push( @lines, sprintf( "%-6.6s _%1.1s%s", $hanger, $subs->[$offset++], $subs->[$offset++] ) );
             $hanger = "";
         } # for
@@ -477,12 +519,11 @@ sub as_usmarc() {
         } # while
 
         return
-	    join( "",
-		$self->indicator(1),
+            join( "",
+                $self->indicator(1),
                 $self->indicator(2),
                 @subs,
-                END_OF_FIELD,
-                );
+                END_OF_FIELD, );
     }
 }
 
@@ -554,6 +595,13 @@ sub _gripe(@) {
     warn $ERROR;
 
     return;
+}
+
+sub _normalize_arrayref {
+    my $ref = shift;
+    if (ref($ref) eq 'ARRAY') { return $ref }
+    elsif (defined $ref) { return [$ref] }
+    return [];
 }
 
 

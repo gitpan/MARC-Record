@@ -2,8 +2,9 @@
 
 use strict;
 use integer;
+use File::Spec;
 
-use Test::More tests=>268;
+use Test::More tests=>267;
 
 BEGIN: {
     use_ok( 'MARC::Batch' );
@@ -11,7 +12,9 @@ BEGIN: {
 
 # Test the USMARC stuff
 USMARC: {
-    my $batch = new MARC::Batch( 'USMARC', 't/camel.usmarc' );
+
+    my $filename = File::Spec->catfile( 't', 'camel.usmarc' );
+    my $batch = new MARC::Batch( 'USMARC', $filename );
     isa_ok( $batch, 'MARC::Batch', 'MARC batch' );
 
     my $n = 0;
@@ -28,8 +31,12 @@ USMARC: {
 # Test MicroLIF batch
 
 MicroLIF: {
-    my @files = <t/sample*.lif>;
-    is( scalar @files, 3, 'Only have 3 sample*.lif files' );
+
+    my @files = (
+        File::Spec->catfile( 't', 'sample1.lif' ),
+        File::Spec->catfile( 't', 'sample20.lif' ),
+        File::Spec->catfile( 't', 'sample100.lif' )
+    );
 
     my $batch = new MARC::Batch( 'MicroLIF', @files );
     isa_ok( $batch, 'MARC::Batch', 'MicroLIF batch' );
