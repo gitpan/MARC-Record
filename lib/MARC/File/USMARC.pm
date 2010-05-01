@@ -16,6 +16,7 @@ use MARC::File;
 use vars qw( @ISA ); @ISA = qw( MARC::File );
 
 use MARC::Record qw( LEADER_LEN );
+use MARC::Field;
 use constant SUBFIELD_INDICATOR     => "\x1F";
 use constant END_OF_FIELD           => "\x1E";
 use constant END_OF_RECORD          => "\x1D";
@@ -188,7 +189,7 @@ sub decode {
             next unless $filter_func->( $tagno, $tagdata );
         }
 
-        if ( ($tagno =~ /^\d+$/) && ($tagno < 10) ) {
+        if ( MARC::Field->is_controlfield_tag($tagno) ) {
             $marc->append_fields( MARC::Field->new( $tagno, $tagdata ) );
         } else {
             my @subfields = split( SUBFIELD_INDICATOR, $tagdata );

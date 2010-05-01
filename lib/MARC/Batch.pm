@@ -12,6 +12,11 @@ multiple-file aspects.
 
     use MARC::Batch;
 
+    # If you have werid control fields...
+    use MARC::Field;
+    MARC::Field->allow_controlfield_tags('FMT', 'LDX');    
+    
+
     my $batch = MARC::Batch->new( 'USMARC', @files );
     while ( my $marc = $batch->next ) {
         print $marc->subfield(245,"a"), "\n";

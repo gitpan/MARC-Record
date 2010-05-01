@@ -16,12 +16,12 @@ use Carp qw(croak);
 
 =head1 VERSION
 
-Version 2.0.0
+Version 2.0.1
 
 =cut
 
 use vars qw( $VERSION );
-$VERSION = '2.0.0';
+$VERSION = '2.0.1';
 
 use Exporter;
 use vars qw( @ISA @EXPORTS @EXPORT_OK );
@@ -245,7 +245,7 @@ sub subfield {
 
 sub _all_parms_are_fields {
     for ( @_ ) {
-        return 0 unless ref($_) eq 'MARC::Field';
+        return 0 unless UNIVERSAL::isa($_, 'MARC::Field');
     }
     return 1;
 }
@@ -327,13 +327,17 @@ sub insert_fields_after {
     ## find position of $after
     my $fields = $self->{_fields};
     my $pos = 0;
+    my $found = 0;
     foreach my $f (@$fields) {
-        last if ($f == $after);
+        if ($f == $after) {
+            $found = 1;
+            last;
+        }
         $pos++;
     }
 
     ## insert after $after
-    if ($pos+1 >= @$fields) {
+    unless ($found) {
         $self->_warn("Couldn't find field to insert after");
         return;
     }
@@ -417,31 +421,41 @@ sub insert_grouped_field {
 }
 
 
-=head2 delete_field( $field )
+=head2 delete_fields( $field )
 
-Deletes a field from the record.
+Deletes a given list of MARC::Field objects from the the record.
 
-The field must have been retrieved from the record using the
-C<field()> method.  For example, to delete a 526 tag if it exists:
+    # delete all note fields
+    my @notes = $record->field('5..');
+    $record->delete_fields(@notes);
 
-    my $tag526 = $marc->field( "526" );
-    if ( $tag526 ) {
-        $marc->delete_field( $tag526 );
+delete_fields() will return the number of fields that were deleted.
+
+=cut
+
+sub delete_fields {
+    my $self = shift;
+    _all_parms_are_fields(@_) or croak('Arguments must be MARC::Field object');
+    my @fields = @{$self->{_fields}};
+    my $original_count = @fields;
+
+    foreach my $deleter (@_) {
+        @fields = grep { $_ != $deleter } @fields;
     }
+    $self->{_fields} = \@fields;
 
-C<delete_field()> returns the number of fields that were deleted.
-This shouldn't be 0 unless you didn't get the tag properly.
+    return $original_count - @fields;
+}
+
+=head2 delete_field()
+
+Same thing as delete_fields() but only expects a single MARC::Field to be passed
+in. Mainly here for backwards compatibility.
 
 =cut
 
 sub delete_field {
-    my $self = shift;
-    my $deleter = shift;
-    my $list = $self->{_fields};
-
-    my $old_count = @$list;
-    @$list = grep { $_ != $deleter } @$list;
-    return $old_count - @$list;
+    return delete_fields(@_);
 }
 
 =head2 as_usmarc()
@@ -525,10 +539,10 @@ sub encoding {
 
     # when setting
     if ( defined($arg) ) {
-        if ( $arg =~ /UTF-8/i ) { 
+        if ( $arg =~ /UTF-?8/i ) { 
             substr($leader,9,1) = 'a';
         }
-        elsif ( $arg =~ /MARC-8/i ) {
+        elsif ( $arg =~ /MARC-?8/i ) {
             substr($leader,9,1) = ' ';
         }
         $self->leader($leader);
@@ -547,6 +561,9 @@ sub set_leader_lengths {
     my $self = shift;
     my $reclen = shift;
     my $baseaddr = shift;
+    if ($reclen > 99999) {
+            carp( "Record length of $reclen is larger than the MARC spec allows (99999 bytes)." );
+    }
     substr($self->{_leader},0,5)  = sprintf("%05d",$reclen);
     substr($self->{_leader},12,5) = sprintf("%05d",$baseaddr);
     # MARC21 defaults: http://www.loc.gov/marc/bibliographic/ecbdldrd.html
@@ -678,7 +695,7 @@ sub add_fields {
             last; # Bail out, we're done eating parms
 
         # User handed us an object.
-        } elsif ( ref($parm) eq "MARC::Field" ) {
+        } elsif ( UNIVERSAL::isa($parm, 'MARC::Field') ) {
             push( @$fields, $parm );
             ++$nfields;
 
@@ -765,7 +782,7 @@ L<MARC::Lint>
 
 =over 4
 
-=item * perl4lib (L<http://www.rice.edu/perl4lib/>)
+=item * perl4lib (L<http://perl4lib.perl.org/>)
 
 A mailing list devoted to the use of Perl in libraries.
 
@@ -779,7 +796,7 @@ The definitive source for all things MARC.
 Online version of the free booklet.  An excellent overview of the MARC format.  Essential.
 
 
-=item * Tag Of The Month (L<http://www.tagofthemonth.com/>)
+=item * Tag Of The Month (L<http://www.follettsoftware.com/sub/tag_of_the_month/>)
 
 Follett Software Company's
 (L<http://www.fsc.follett.com/>) monthly discussion of various MARC tags.
@@ -846,9 +863,19 @@ This code may be distributed under the same terms as Perl itself.
 Please note that these modules are not products of or supported by the
 employers of the various contributors to the code.
 
-=head1 AUTHOR
+=head1 AUTHORS
 
-Andy Lester, C<< <andy@petdance.com> >>
+=over 4
+
+=item * Andy Lester 
+
+=item * Mike O'Regan
+
+=item * Ed Summers
+
+=item * Mike Rylander
+
+=back
 
 =cut
 
