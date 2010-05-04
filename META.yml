@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:               MARC-Record
-version:            2.0.1
+version:            2.0.2
 abstract:           Perl extension for handling MARC records
 author:
     - Galen Charlton <gmcharlt@gmail.com>
