@@ -10,7 +10,6 @@ lib/MARC/File/USMARC.pm
 lib/MARC/Record.pm
 Makefile.PL
 MANIFEST
-META.yml
 README
 t/00.load.t
 t/10.camel.t
@@ -59,6 +58,8 @@ t/lineendings-0d0a.lif
 t/lineendings.t
 t/pod-coverage.t
 t/pod.t
+t/rename-field.t
+t/rt67094_field_sans_subfields.t
 t/sample1.lif
 t/sample1.usmarc
 t/sample100.lif
@@ -67,3 +68,5 @@ t/sample20.lif
 t/title_proper.t
 t/title_proper.usmarc
 t/utf8.t
+META.yml                                 Module YAML meta-data (added by MakeMaker)
+META.json                                Module JSON meta-data (added by MakeMaker)

@@ -1,7 +1,9 @@
-#!perl -Tw
+#!perl -T
 
-use Test::More tests => 17;
 use strict;
+use warnings;
+
+use Test::More tests => 25;
 use File::Spec;
 
 use_ok( 'MARC::Record' );
@@ -23,6 +25,12 @@ is( $r->field(100)->indicator(2), 2, 'not disturbed' );
 $r->append_fields( MARC::Field->new( 111, 2, '-didk', a=> 'foo' ) );
 is ($r->field(111)->indicator(1), 2, 'not disturbed' );
 is ($r->field(111)->indicator(2), ' ', 'invalid indicator squashed to space' );
+
+# make sure 
+eval {
+    my $ind = $r->field(100)->indicator(3);
+};
+like($@, qr/Indicator number must be 1 or 2/, 'croaked trying to retrieve indicator 3');
 
 ## read a file which has an invalid indicator (a hyphen) and make sure it does 
 ## not affect a valid indicator
@@ -56,3 +64,25 @@ CONTROLFIELD: {
     ok( !defined $field->indicator(2), 'indicator(2) for control field returns undef' );
     is( scalar($field->warnings()), 1, 'indicator(2) for control field generates warning' );
 }
+
+# check indicator setting
+my $field = MARC::Field->new('245', ' ', '0', a => 'The wind in the wilows' );
+is( $field->indicator(1), ' ', 'first indicator starts as blank' );
+$field->set_indicator(1, '0' );
+is( $field->indicator(1), '0', 'first indicator is now 0' );
+is( $field->indicator(2), '0', 'second indicator starts as 0' );
+$field->set_indicator(2, '4' );
+is( $field->indicator(2), '4', 'second indicator is now 4' );
+eval {
+    $field->set_indicator(3, 'a');
+};
+like( $@, qr/Indicator number must be 1 or 2/, 'cannot set indicator value at invalid position' );
+eval {
+    $field->set_indicator(1, "\n");
+};
+like( $@, qr/Indicator value is invalid/, 'cannot set indicator to invalid value' );
+my $control_field = MARC::Field->new('003', 'abc');
+eval {
+    $control_field->set_indicator(1, ' ');
+};
+like( $@, qr/Cannot set indicator for control field/, 'cannot set indicator for control field' );

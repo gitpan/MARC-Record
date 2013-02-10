@@ -79,7 +79,7 @@ sub new {
     ## add_controlfield
     
     my $tagno = shift;
-    ($tagno =~ /^[0-9A-Za-z]{3}$/)
+    $class->is_valid_tag($tagno)
         or croak( "Tag \"$tagno\" is not a valid tag." );
     my $is_control = $class->is_controlfield_tag($tagno);
 
@@ -95,8 +95,8 @@ sub new {
     } else {
         for my $indcode ( qw( _ind1 _ind2 ) ) {
             my $indicator = shift;
-            scalar(@_) or croak("Field $tagno must have indicators (use ' ' for empty indicators)");
-            if ($indicator !~ /^[0-9A-Za-z ]$/ ) {
+            defined($indicator) or croak("Field $tagno must have indicators (use ' ' for empty indicators)");
+            unless ($self->is_valid_indicator($indicator)) {
                 $self->_warn( "Invalid indicator \"$indicator\" forced to blank" ) unless ($indicator eq "");
                 $indicator = " ";
             }
@@ -125,20 +125,39 @@ sub tag {
     return $self->{_tag};
 }
 
-=head2 indicator(indno)
+=head2 set_tag(tag)
 
-Returns the specified indicator.  Returns C<undef> and sets
-C<$MARC::Field::ERROR> if the I<indno> is not 1 or 2, or if
-the tag doesn't have indicators.
+Changes the tag number of this field. Updates the control status accordingly.
+Will C<croak> if an invalid value is passed in.
 
 =cut
 
-sub indicator($) {
+sub set_tag {
+    my ( $self, $tagno ) = @_;
+
+    $self->is_valid_tag($tagno)
+      or croak("Tag \"$tagno\" is not a valid tag.");
+    $self->{_tag}              = $tagno;
+    $self->{_is_control_field} = $self->is_controlfield_tag($tagno);
+}
+
+=head2 indicator(indno)
+
+Returns the specified indicator.  Returns C<undef> and logs
+a warning if field is a control field and thus doesn't have
+indicators.  If the field is not a control field, croaks
+if the I<indno> is not 1 or 2.
+
+=cut
+
+sub indicator {
     my $self = shift;
     my $indno = shift;
 
-    $self->_warn( "Control fields (generally, those with tags below 010) do not have indicators" )
-        if $self->is_control_field;
+    if ($self->is_control_field) {
+        $self->_warn( "Control fields (generally, those with tags below 010) do not have indicators" );
+        return;
+    }
 
     if ( $indno == 1 ) {
         return $self->{_ind1};
@@ -147,6 +166,30 @@ sub indicator($) {
     } else {
         croak( "Indicator number must be 1 or 2" );
     }
+}
+
+=head2 set_indicator($indno, $indval)
+
+Set the indicator position I<$indno> to the value
+specified by I<$indval>.  Croaks if the indicator position,
+is invalid, the field is a control field and thus
+doesn't have indicators, or if the new indicator value
+is invalid.
+
+=cut
+
+sub set_indicator {
+    my $self = shift;
+    my $indno = shift;
+    my $indval = shift;
+
+    croak('Indicator number must be 1 or 2')
+      unless defined $indno && $indno =~ /^[12]$/;
+    croak('Cannot set indicator for control field')
+      if $self->is_control_field;
+    croak('Indicator value is invalid') unless $self->is_valid_indicator($indval);
+
+    $self->{"_ind$indno"} = $indval;
 }
 
 =head2 allow_controlfield_tags($tag, $tag2, ...)
@@ -182,6 +225,32 @@ sub disallow_controlfield_tags {
   foreach my $tag (@_) {
     delete $extra_controlfield_tags{$tag};
   }
+}
+
+=head2 is_valid_tag($tag) -- is the given tag valid?
+
+Generally called as a class method (e.g., MARC::Field->is_valid_tag('001'))
+
+=cut
+
+sub is_valid_tag {
+    my $self = shift;
+    my $tag = shift;
+    return 1 if defined $tag && $tag =~ /^[0-9A-Za-z]{3}$/;
+    return 0;
+}
+
+=head2 is_valid_indicator($indval) -- is the given indicator value valid?
+
+Generally called as a class method (e.g., MARC::Field->is_valid_indicator('4'))
+
+=cut
+
+sub is_valid_indicator {
+    my $self = shift;
+    my $indval = shift;
+    return 1 if defined $indval && $indval =~ /^[0-9A-Za-z ]$/;
+    return 0;
 }
 
 =head2 is_controlfield_tag($tag) -- does the given tag denote a control field?
@@ -337,21 +406,45 @@ use the pos parameter:
     # delete subfield u at first or second position
     $field->delete_subfield(code => 'u', pos => [0,1]);
 
+    # delete the second subfield, no matter what it is
+    $field->delete_subfield(pos => 1);
+
 You can specify a regex to for only deleting subfields that match:
 
    # delete any subfield u that matches zombo.com
    $field->delete_subfield(code => 'u', match => qr/zombo.com/);
 
+   # delete any subfield that matches quux
+   $field->delete_subfield(match => qr/quux/);
+
+You can also pass a single subfield label:
+
+  # delete all subfield u
+  $field->delete_subfield('u');
+
 =cut
 
 sub delete_subfield {
-    my ($self, %options) = @_;
+    my ($self, @options) = @_;
+
+    my %options;
+    if (scalar(@options) == 1) {
+        $options{code} = $options[0];
+    } elsif (0 == scalar(@options) % 2) {
+        %options = @options;
+    } else {
+        croak 'delete_subfield must be called with single scalar or a hash';
+    }
+
     my $codes = _normalize_arrayref($options{code});
     my $positions = _normalize_arrayref($options{'pos'});
     my $match = $options{match};
    
     croak 'match must be a compiled regex' 
       if $match and ref($match) ne 'Regexp';
+
+   croak 'must supply subfield code(s) and/or subfield position(s) and/or match patterns to delete_subfield'
+      unless $match or (@$codes > 0) or (@$positions > 0);
 
     my @current_subfields = @{$self->{_subfields}};
     my @new_subfields = ();
@@ -519,7 +612,7 @@ Note that subfield h comes before subfield b in the output.
 
 =cut
 
-sub as_string() {
+sub as_string {
     my $self = shift;
     my $subfields = shift;
 
@@ -548,7 +641,7 @@ Returns a pretty string for printing in a MARC dump.
 
 =cut
 
-sub as_formatted() {
+sub as_formatted {
     my $self = shift;
 
     my @lines;
@@ -578,7 +671,7 @@ useful for C<MARC::Record::as_usmarc()>.
 
 =cut
 
-sub as_usmarc() {
+sub as_usmarc {
     my $self = shift;
 
     # Control fields are pretty easy
@@ -649,20 +742,20 @@ you're doing some grunt data analysis, you probably don't care.
 
 =cut
 
-sub warnings() {
+sub warnings {
     my $self = shift;
 
     return @{$self->{_warnings}};
 }
 
 # NOTE: _warn is an object method
-sub _warn($) {
+sub _warn {
     my $self = shift;
 
     push( @{$self->{_warnings}}, join( "", @_ ) );
 }
 
-sub _gripe(@) {
+sub _gripe {
     $ERROR = join( "", @_ );
 
     warn $ERROR;

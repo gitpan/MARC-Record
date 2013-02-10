@@ -15,7 +15,7 @@ use vars qw( $ERROR );
 
     use MARC::File::USMARC;
 
-    # If you have werid control fields...
+    # If you have weird control fields...
     use MARC::Field;
     MARC::Field->allow_controlfield_tags('FMT', 'LDX');    
 
@@ -68,7 +68,7 @@ sub in {
     ## return undef if we weren't able to open it
     else {
         $filename = $arg;
-        $fh = eval { local *FH; open( FH, $arg ) or die; *FH{IO}; };
+        $fh = eval { local *FH; open( FH, '<', $arg ) or die; *FH{IO}; };
         if ( $@ ) {
             $MARC::File::ERROR = "Couldn't open $filename: $@";
             return;
@@ -154,7 +154,7 @@ sub close {
     return;
 }
 
-sub _unimplemented() {
+sub _unimplemented {
     my $self = shift;
     my $method = shift;
     warn "Method $method must be overridden";
@@ -184,8 +184,8 @@ sub _warn {
 }
 
 # NOTE: _gripe can be called as an object method, or not.  Your choice.
-# NOTE: it's use is now depracated use _warn instead
-sub _gripe(@) {
+# NOTE: it's use is now deprecated use _warn instead
+sub _gripe {
     my @parms = @_;
     if ( @parms ) {
         my $self = shift @parms;
