@@ -22,4 +22,4 @@ requires:
   File::Find: 0
   File::Spec: 0
   Test::More: 0
-version: v2.0.4
+version: v2.0.5
