@@ -1,6 +1,7 @@
 package MARC::Field;
 
 use strict;
+use warnings;
 use integer;
 use Carp;
 
@@ -397,6 +398,9 @@ delete_subfield() allows you to remove subfields from a field:
     # delete any subfield a or u in the field
     $field->delete_subfield(code => ['a', 'u']);
 
+    # delete any subfield code matching a compiled regular expression
+    $field->delete_subfield(code => qr/[^a-z0-9]/);
+
 If you want to only delete subfields at a particular position you can 
 use the pos parameter:
 
@@ -455,7 +459,11 @@ sub delete_subfield {
         $subfield_num += 1;
         my $subfield_code = shift @current_subfields;
         my $subfield_value = shift @current_subfields;
-        if ((@$codes==0 or grep {$_ eq $subfield_code} @$codes)
+        if ((@$codes==0 or 
+            grep {
+                (ref($_) eq 'Regexp' && $subfield_code =~ $_) ||
+                (ref($_) ne 'Regexp' && $_ eq $subfield_code)
+            } @$codes)
             and (!$match or $subfield_value =~ $match) 
             and (@$positions==0 or grep {$_ == $subfield_num} @$positions)) {
             $removed += 1;
@@ -470,7 +478,7 @@ sub delete_subfield {
 =head2 delete_subfields()
 
 Delete all subfields with a given subfield code. This is here for backwards
-compatability, you should use the more flexible delete_subfield().
+compatibility, you should use the more flexible delete_subfield().
 
 =cut
 
@@ -587,11 +595,11 @@ sub replace_with {
 }
 
 
-=head2 as_string( [$subfields] )
+=head2 as_string( [$subfields] [, $delimiter] )
 
-Returns a string of all subfields run together.  A space is added to
-the result between each subfield.  The tag number and subfield
-character are not included.
+Returns a string of all subfields run together. A space is added to
+the result between each subfield, unless the delimiter parameter is
+passed.  The tag number and subfield character are not included.
 
 Subfields appear in the output string in the order in which they
 occur in the field.
@@ -607,6 +615,8 @@ If C<$subfields> is specified, then only those subfields will be included.
                 );
   print $field->as_string( 'abh' ); # Only those three subfields
   # prints 'Abraham Lincoln [videorecording] : preserving the union /'.
+  print $field->as_string( 'ab', '--' ); # Only those two subfields, with a delimiter
+  # prints 'Abraham Lincoln--preserving the union /'.
 
 Note that subfield h comes before subfield b in the output.
 
@@ -615,6 +625,8 @@ Note that subfield h comes before subfield b in the output.
 sub as_string {
     my $self = shift;
     my $subfields = shift;
+    my $delimiter = shift;
+    $delimiter = " " unless defined $delimiter;
 
     if ( $self->is_control_field ) {
         return $self->{_data};
@@ -628,10 +640,10 @@ sub as_string {
         my $offset = ($i-1)*2;
         my $code = $subs->[$offset];
         my $text = $subs->[$offset+1];
-        push( @subs, $text ) if !$subfields || $code =~ /^[$subfields]$/;
+        push( @subs, $text ) if !defined($subfields) || $code =~ /^[$subfields]$/;
     } # for
 
-    return join( " ", @subs );
+    return join( $delimiter, @subs );
 }
 
 

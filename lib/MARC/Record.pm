@@ -7,6 +7,7 @@ MARC::Record - Perl extension for handling MARC records
 =cut
 
 use strict;
+use warnings;
 use integer;
 
 use vars qw( $ERROR );
@@ -16,12 +17,12 @@ use Carp qw(croak carp);
 
 =head1 VERSION
 
-Version 2.0.5
+Version 2.0.6
 
 =cut
 
 use vars qw( $VERSION );
-$VERSION = '2.0.5';
+$VERSION = '2.0.6';
 
 use Exporter;
 use vars qw( @ISA @EXPORTS @EXPORT_OK );
@@ -645,7 +646,7 @@ sub warnings {
 C<add_fields()> is now deprecated, and users are encouraged to use
 C<append_fields()>, C<insert_fields_after()>, and C<insert_fields_before()>
 since they do what you want probably. It is still here though, for backwards
-compatability.
+compatibility.
 
 C<add_fields()> adds MARC::Field objects to the end of the list.  Returns the
 number of fields added, or C<undef> if there was an error.
